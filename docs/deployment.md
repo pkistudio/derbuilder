@@ -42,8 +42,9 @@ npm run pack:dry-run
 npm run preview
 ```
 
-Open the preview URL, build a NamedObject, and confirm that Generated DER is
-rendered. Browser developer tools should show no external requests.
+Open the preview URL, build a NamedObject, and confirm that a new editable
+DerEditor tab displays the generated DER. Browser developer tools should show
+no external requests.
 
 ## Failure handling
 

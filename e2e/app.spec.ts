@@ -10,13 +10,17 @@ Person ::= SEQUENCE {
 }
 END`;
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, context }) => {
   const errors: string[] = [];
   pageErrors.set(page, errors);
-  page.on('pageerror', (error) => errors.push(error.message));
-  page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
-  });
+  const monitor = (target: Page) => {
+    target.on('pageerror', (error) => errors.push(error.message));
+    target.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+  };
+  monitor(page);
+  context.on('page', monitor);
 });
 
 test.afterEach(async ({ page }) => {
@@ -26,7 +30,7 @@ test.afterEach(async ({ page }) => {
 test('starts with the DER Builder identity and makes every primary pane available', async ({ page }) => {
   await openApp(page);
   await expect(page.locator('.derbuilder-workspace')).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Generated DER' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Generated DER' })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'API call log' })).toBeVisible();
 
   await page.getByLabel('Application toolbar').getByRole('button', { name: 'About' }).click();
@@ -35,9 +39,9 @@ test('starts with the DER Builder identity and makes every primary pane availabl
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
 });
 
-test('loads Person from NamedObjects, synchronizes Form and JSON, and builds read-only DER locally', async ({ page }) => {
+test('loads Person from NamedObjects, synchronizes Form and JSON, and opens generated DER in a new editable DerEditor tab', async ({ page, context }) => {
   const externalRequests: string[] = [];
-  page.on('request', (request) => {
+  context.on('request', (request) => {
     if (!request.url().startsWith('http://127.0.0.1:4173/')) externalRequests.push(request.url());
   });
 
@@ -53,13 +57,23 @@ test('loads Person from NamedObjects, synchronizes Form and JSON, and builds rea
   await page.getByRole('tab', { name: 'JSON' }).click();
   await expect(page.locator('[data-role="input"]')).toHaveValue(/"name": "Bob"/);
 
+  const popupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Build DER' }).click();
+  const popup = await popupPromise;
+  await popup.waitForLoadState('domcontentloaded');
   await expect(page.locator('[data-role="build-status"]')).toContainText('Built Person');
-  await expect(page.locator('[data-role="der-viewer"] .tree')).toBeVisible();
-  await expect(page.locator('[data-role="der-viewer"]')).toContainText('generated DER · read-only');
-  await expect(page.locator('[data-role="der-viewer"] [data-action="toggle-save-menu"]')).toBeDisabled();
-  await expect(page.locator('[data-role="api-log"]')).toContainText('loadDerEditor');
+  await expect(page.locator('[data-role="build-status"]')).toContainText('Opened the result in a new DerEditor tab');
+  await expect(page.locator('[data-role="der-viewer"]')).toHaveCount(0);
+  await expect(popup).toHaveTitle('Person · DerEditor');
+  await expect(popup.locator('#app')).toHaveClass(/derbuilder-transfer-root/);
+  await expect(popup.locator('[data-role="der-viewer"] .tree')).toBeVisible();
+  await expect(popup.locator('[data-role="der-viewer"]')).toContainText('Person · generated DER');
+  await expect(popup.locator('[data-role="der-viewer"] [data-action="toggle-save-menu"]')).toBeEnabled();
+  await expect(page.locator('[data-role="api-log"]')).toContainText('openDerEditorTab');
+  await expect.poll(() => new URL(popup.url()).searchParams.has('derbuilderDocument')).toBe(false);
+  await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('derbuilder-document-')))).toEqual([]);
   expect(externalRequests).toEqual([]);
+  await popup.close();
 });
 
 test('loads raw ASN.1 and blocks invalid Instance JSON with structured diagnostics', async ({ page }) => {
@@ -75,6 +89,21 @@ test('loads raw ASN.1 and blocks invalid Instance JSON with structured diagnosti
   await expect(page.locator('[data-role="diagnostics"]')).toContainText('missing-field');
   await expect(page.locator('[data-role="diagnostics"]')).toContainText('name');
   await expect(page.locator('[data-role="build-status"]')).toContainText('Instance diagnostics contain errors');
+});
+
+test('keeps a successful DER result and reports when the browser blocks the DerEditor tab', async ({ page }) => {
+  await openApp(page);
+  await loadNamedObject(page, 'person');
+  await page.evaluate(() => {
+    window.open = () => null;
+  });
+
+  await page.getByRole('button', { name: 'Build DER' }).click();
+  await expect(page.locator('[data-role="build-status"]')).toContainText('Built Person');
+  await expect(page.locator('[data-role="build-status"]')).toContainText('browser blocked the popup');
+  await expect(page.locator('[data-role="api-log"]')).toContainText('openDerEditorTab');
+  await expect(page.locator('[data-role="api-log"]')).toContainText('browser blocked the popup');
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('derbuilder-document-')))).toEqual([]);
 });
 
 test('loads Schema Model JSON and ASN.1 from the clipboard', async ({ page, context }) => {
@@ -192,11 +221,14 @@ test('loads and saves a Definition Bundle without losing workspace metadata', as
 test('opens a DerEditor Send to subtree in an editable same-page transfer view', async ({ page }) => {
   await openApp(page);
   await loadNamedObject(page, 'person');
+  const generatedPopupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Build DER' }).click();
-  const viewer = page.locator('[data-role="der-viewer"]');
+  const generatedPopup = await generatedPopupPromise;
+  await generatedPopup.waitForLoadState('domcontentloaded');
+  const viewer = generatedPopup.locator('[data-role="der-viewer"]');
   await viewer.locator('.icon[data-node-icon]').first().click();
   await viewer.locator('[data-node-action="send-to"]').click();
-  const popupPromise = page.waitForEvent('popup');
+  const popupPromise = generatedPopup.waitForEvent('popup');
   await viewer.locator('[data-node-action="send-new-window"]').click();
   const popup = await popupPromise;
   await popup.waitForLoadState('domcontentloaded');
@@ -206,6 +238,7 @@ test('opens a DerEditor Send to subtree in an editable same-page transfer view',
   await expect(popup.locator('[data-role="der-viewer"] .tree')).toBeVisible();
   await expect(popup.locator('[data-role="der-viewer"] [data-action="toggle-save-menu"]')).toBeEnabled();
   await popup.close();
+  await generatedPopup.close();
 });
 
 test('keeps primary areas reachable at a 390px viewport and supports keyboard resizing', async ({ page }) => {
@@ -214,7 +247,7 @@ test('keeps primary areas reachable at a 390px viewport and supports keyboard re
   await expect(page.locator('.derbuilder-definition-panel')).toBeVisible();
   await expect(page.locator('.derbuilder-instance-panel')).toBeVisible();
   await expect(page.locator('.derbuilder-diagnostics-panel')).toBeVisible();
-  await expect(page.locator('.derbuilder-generated-panel')).toBeVisible();
+  await expect(page.locator('.derbuilder-generated-panel')).toHaveCount(0);
   await expect(page.locator('.derbuilder-log-panel')).toBeVisible();
   await expect(page.locator('[data-role="workspace-resizer"]')).toBeHidden();
 

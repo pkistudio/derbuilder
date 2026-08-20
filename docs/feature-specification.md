@@ -96,17 +96,19 @@ PkiBundle.
 
 ## Browser workflow
 
-The browser application exposes Definition, Instance Input, Diagnostics,
-Generated DER, API Log, and About areas. A user loads ASN.1, Schema Model JSON,
-a Definition Bundle, or a NamedObject; selects a root type; edits Form or JSON;
-builds; and inspects successful output in an embedded read-only DerEditor.
-DerEditor's public Send to action opens the transferred content in the same
-application URL with an editable viewer and the DerEditor icon.
+The browser application exposes Definition, Instance Input, Diagnostics, API
+Log, and About areas. A user loads ASN.1, Schema Model JSON, a Definition
+Bundle, or a NamedObject; selects a root type; edits Form or JSON; builds; and
+inspects successful output in a new editable DerEditor tab. DerEditor's public
+Send to action can open further transferred content in the same application URL
+with the DerEditor icon.
 
 ## Intentional changes from ASN.1 Instance Builder
 
 - Public names, CSS prefixes, and package entry points use DER Builder naming.
-- The obsolete PkiStudioJS popup and local-storage viewer protocol is removed.
+- The obsolete PkiStudioJS viewer is removed. A small versioned, one-shot
+  same-origin transfer owned by DER Builder replaces its popup protocol for
+  opening complete generated documents in DerEditor.
 - DerEditor is consumed only through the published, exactly pinned npm package.
 - The app `build()` method returns a structured success or failure result.
 - Repository specifications and operational documentation are maintained in

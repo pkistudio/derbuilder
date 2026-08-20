@@ -13,6 +13,7 @@ import {
 } from '../../core.js';
 import { derEditorVersion, mountDerEditor, parseDerEditorInput } from '../../dereditor-adapter.js';
 import { findDefinitionBundleEntry, getDefinitionBundleSampleInputs, getDefinitionBundleUiProfiles, isRawAsn1BundleSchemaSource, parseDefinitionBundleJsonWithDiagnostics, validateDefinitionBundle, type DefinitionBundle, type DefinitionBundleDiagnostic } from './definition-bundle.js';
+import { consumeGeneratedDerTransfer, generatedDerTransferParameter, openGeneratedDerEditorTab, removeGeneratedDerTransferParameter, type GeneratedDerTransfer } from './dereditor-transfer.js';
 import { createDefaultInput, findChoiceAlternative, getValueAtPath, parseFormPath, removeValueAtPath, setFormControlValue, setValueAtPath } from './form-model.js';
 import { readFormControlValue, renderInputForm, updateInputModeButtons, type InputMode } from './form-renderer.js';
 import { namedObjectDefinitionBundles } from './named-object-bundles.js';
@@ -31,6 +32,7 @@ export interface DerBuilderAppOptions {
 export interface DerBuilderBuildOptions {
   typeName?: string;
   input?: unknown;
+  openViewerTab?: boolean;
 }
 
 export interface DerBuilderApp {
@@ -76,7 +78,6 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
   const inputModeButtons = Array.from(mount.querySelectorAll<HTMLButtonElement>('[data-role="input-mode"]'));
   const typeSelect = mustFind<HTMLSelectElement>(mount, '[data-role="type"]');
   const diagnosticsList = mustFind<HTMLElement>(mount, '[data-role="diagnostics"]');
-  const derViewerMount = mustFind<HTMLElement>(mount, '[data-role="der-viewer"]');
   const workspace = mustFind<HTMLElement>(mount, '[data-role="workspace"]');
   const workspaceResizer = mustFind<HTMLElement>(mount, '[data-role="workspace-resizer"]');
   const rightStack = mustFind<HTMLElement>(mount, '[data-role="right-stack"]');
@@ -97,8 +98,6 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
   const aboutButton = mustFind<HTMLButtonElement>(mount, '[data-role="about"]');
   const aboutDialog = mustFind<HTMLDialogElement>(mount, '[data-role="about-dialog"]');
   const closeAboutButton = mustFind<HTMLButtonElement>(mount, '[data-role="close-about"]');
-  const derViewer = mountDerEditor(derViewerMount, { editable: false });
-
   let schema = emptySchema;
   let input: unknown;
   let inputMode: InputMode = 'json';
@@ -196,7 +195,6 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
     inputText.value = '';
     typeSelect.innerHTML = '';
     diagnosticsList.innerHTML = '';
-    derViewer.close();
     definitionStatus.textContent = 'Definition input is ready.';
     buildStatus.textContent = 'Build status is ready.';
     updateDefinitionActionState();
@@ -214,7 +212,7 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
       const schemaDiagnostics = validateSchemaModule(schema);
       renderDiagnostics(diagnosticsList, [{ title: 'Schema', diagnostics: schemaDiagnostics }]);
       definitionStatus.textContent = schemaDiagnostics.length > 0 ? `Loaded from ${source}. Definition diagnostics: ${formatDiagnosticSummary(schemaDiagnostics)}` : `Loaded ${schema.types.length} ASN.1 type${schema.types.length === 1 ? '' : 's'} from ${source}.`;
-      buildStatus.textContent = 'Definition loaded. Build DER to update the generated output.';
+      buildStatus.textContent = 'Definition loaded. Build DER to open the generated output in a new DerEditor tab.';
       updateDefinitionActionState();
       renderActiveInputEditor();
       appendApiLog(apiLog, apiLogEntries, { level: schemaDiagnostics.some((diagnostic) => diagnostic.severity === 'error') ? 'error' : schemaDiagnostics.length > 0 ? 'warning' : 'success', label: 'loadDefinition', detail: `${source}: ${formatDiagnosticSummary(schemaDiagnostics)}` });
@@ -250,7 +248,7 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
     inputText.value = JSON.stringify(sampleInput, null, 2);
     currentInstanceDiagnostics = [];
     inputFormError = undefined;
-    buildStatus.textContent = `Loaded ${typeName} sample input. Build DER to update the generated output.`;
+    buildStatus.textContent = `Loaded ${typeName} sample input. Build DER to open the generated output in a new DerEditor tab.`;
     updateDefinitionActionState();
     renderActiveInputEditor();
     appendApiLog(apiLog, apiLogEntries, { level: 'success', label: 'loadSampleInput', detail: `${typeName}: loaded sample input.` });
@@ -267,7 +265,7 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
     const schemaDiagnostics = validateSchemaModule(schema);
     renderDiagnostics(diagnosticsList, [{ title: 'Schema', diagnostics: schemaDiagnostics }]);
     definitionStatus.textContent = schemaDiagnostics.length > 0 ? `Loaded from ${source}. Definition diagnostics: ${formatDiagnosticSummary(schemaDiagnostics)}` : `Loaded ${schema.types.length} ASN.1 type${schema.types.length === 1 ? '' : 's'} from ${source}.`;
-    buildStatus.textContent = 'Definition loaded. Build DER to update the generated output.';
+    buildStatus.textContent = 'Definition loaded. Build DER to open the generated output in a new DerEditor tab.';
     currentInstanceDiagnostics = [];
     inputFormError = undefined;
     updateDefinitionActionState();
@@ -344,11 +342,21 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
         const document = createInstance(schema, typeName, input);
         appendApiLog(apiLog, apiLogEntries, { level: 'success', label: 'createInstance', detail: `${document.typeName}: ${document.der.byteLength} DER bytes.` });
         const warningCount = [...schemaDiagnostics, ...instanceDiagnostics].filter((diagnostic) => diagnostic.severity === 'warning').length;
-        buildStatus.textContent = warningCount > 0 ? `Built ${document.typeName} as ${document.der.byteLength} DER bytes with ${warningCount} warning${warningCount === 1 ? '' : 's'}.` : `Built ${document.typeName} as ${document.der.byteLength} DER bytes.`;
+        const buildSummary = warningCount > 0 ? `Built ${document.typeName} as ${document.der.byteLength} DER bytes with ${warningCount} warning${warningCount === 1 ? '' : 's'}.` : `Built ${document.typeName} as ${document.der.byteLength} DER bytes.`;
         parseDerEditorInput(document.der, 'der');
-        derViewer.loadBytes(document.der, `${document.typeName} · generated DER · read-only`);
-        derViewer.setEditable(false);
-        appendApiLog(apiLog, apiLogEntries, { level: 'success', label: 'loadDerEditor', detail: `DerEditor parsed and displayed ${document.typeName}.` });
+        if (buildOptions.openViewerTab ?? true) {
+          const viewerTab = openGeneratedDerEditorTab(document.der, document.typeName);
+          if (viewerTab.opened) {
+            buildStatus.textContent = `${buildSummary} Opened the result in a new DerEditor tab.`;
+            appendApiLog(apiLog, apiLogEntries, { level: 'success', label: 'openDerEditorTab', detail: `Opened ${document.typeName} in a new editable DerEditor tab.` });
+          } else {
+            buildStatus.textContent = `${buildSummary} ${viewerTab.reason}`;
+            appendApiLog(apiLog, apiLogEntries, { level: 'warning', label: 'openDerEditorTab', detail: viewerTab.reason });
+          }
+        } else {
+          buildStatus.textContent = buildSummary;
+          appendApiLog(apiLog, apiLogEntries, { level: 'info', label: 'openDerEditorTab', detail: 'Opening a DerEditor tab was disabled for this build.' });
+        }
         return { ok: true, document, schemaDiagnostics, instanceDiagnostics };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -380,7 +388,6 @@ export function initDerBuilder(options: DerBuilderAppOptions): DerBuilderApp {
       setInputValue(nextInput);
     },
     close() {
-      derViewer.close();
       mount.innerHTML = '';
       mount.className = '';
     }
@@ -651,10 +658,6 @@ function renderShell(): string {
         </section>
       </section>
     </main>
-    <section class="derbuilder-generated-panel" aria-label="Generated DER">
-      <header><strong>Generated DER</strong><span>DerEditor · read-only</span></header>
-      <div data-role="der-viewer" class="derbuilder-der-viewer"></div>
-    </section>
     <div data-role="api-log-resizer" class="derbuilder-api-log-resizer" role="separator" aria-label="Resize API log" aria-orientation="horizontal" tabindex="0"></div>
     <section class="derbuilder-log-panel" aria-label="API call log">
       <div class="derbuilder-api-log-header">
@@ -1034,14 +1037,37 @@ function diagnosticFromError(error: unknown): AppDiagnostic {
 
 function hasDerEditorTransferPayload(): boolean {
   const search = new URL(window.location.href).searchParams;
-  return search.has('subtree') || search.has('expand');
+  return search.has(generatedDerTransferParameter) || search.has('subtree') || search.has('expand');
 }
 
 function initDerEditorTransfer(mount: HTMLElement): DerBuilderApp {
   setDocumentIcon(derEditorIconUrl);
   mount.className = 'derbuilder-transfer-root';
   mount.innerHTML = '<main class="derbuilder-transfer-shell"><section data-role="der-viewer" class="derbuilder-der-viewer"></section></main>';
-  const viewer = mountDerEditor(mustFind<HTMLElement>(mount, '[data-role="der-viewer"]'), { editable: true });
+  const viewerMount = mustFind<HTMLElement>(mount, '[data-role="der-viewer"]');
+  let generatedTransfer: GeneratedDerTransfer | undefined;
+  let transferError: string | undefined;
+  const url = new URL(window.location.href);
+  if (url.searchParams.has(generatedDerTransferParameter)) {
+    try {
+      generatedTransfer = consumeGeneratedDerTransfer(url, window.localStorage);
+    } catch (error) {
+      transferError = `Could not load generated DER: ${error instanceof Error ? error.message : String(error)}`;
+    } finally {
+      const cleanUrl = removeGeneratedDerTransferParameter(url);
+      window.history.replaceState(null, '', cleanUrl.toString());
+    }
+  }
+  const viewer = mountDerEditor(viewerMount, { editable: true });
+  if (generatedTransfer) {
+    document.title = `${generatedTransfer.label} · DerEditor`;
+    viewer.loadBytes(generatedTransfer.bytes, `${generatedTransfer.label} · generated DER`);
+  } else if (transferError) {
+    const message = document.createElement('p');
+    message.className = 'derbuilder-transfer-error';
+    message.textContent = transferError;
+    viewerMount.append(message);
+  }
   return {
     async build() {
       return {
