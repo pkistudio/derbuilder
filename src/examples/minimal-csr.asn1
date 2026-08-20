@@ -1,0 +1,54 @@
+MinimalCsrExample DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+AlgorithmIdentifier ::= SEQUENCE {
+  algorithm OBJECT IDENTIFIER,
+  parameters NULL OPTIONAL
+}
+
+AttributeTypeAndValue ::= SEQUENCE {
+  type OBJECT IDENTIFIER,
+  value DirectoryString
+}
+
+DirectoryString ::= CHOICE {
+  utf8String UTF8String,
+  printableString PrintableString
+}
+
+RelativeDistinguishedName ::= SET OF AttributeTypeAndValue
+
+RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
+Name ::= CHOICE {
+  rdnSequence RDNSequence
+}
+
+SubjectPublicKeyInfo ::= SEQUENCE {
+  algorithm AlgorithmIdentifier,
+  subjectPublicKey BIT STRING
+}
+
+AttributeValue ::= OCTET STRING
+
+AttributeValues ::= SET OF AttributeValue
+
+Attribute ::= SEQUENCE {
+  type OBJECT IDENTIFIER,
+  values AttributeValues
+}
+
+Attributes ::= SET OF Attribute
+
+CertificationRequestInfo ::= SEQUENCE {
+  version INTEGER,
+  subject Name,
+  subjectPublicKeyInfo SubjectPublicKeyInfo,
+  attributes [0] IMPLICIT Attributes
+}
+
+CertificationRequest ::= SEQUENCE {
+  certificationRequestInfo CertificationRequestInfo,
+  signatureAlgorithm AlgorithmIdentifier,
+  signature BIT STRING
+}
+
+END

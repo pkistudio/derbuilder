@@ -1,0 +1,14 @@
+X509VersionExample DEFINITIONS ::= BEGIN
+
+Version ::= INTEGER {
+  v1(0),
+  v2(1),
+  v3(2)
+}
+
+TBSCertificatePrefix ::= SEQUENCE {
+  version [0] EXPLICIT Version DEFAULT v1,
+  serialNumber INTEGER
+}
+
+END

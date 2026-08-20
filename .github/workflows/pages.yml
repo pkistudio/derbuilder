@@ -1,0 +1,156 @@
+name: Deploy GitHub Pages
+
+run-name: Deploy ${{ github.sha }} to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: derbuilder-github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Validate and package site
+    if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install package
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Run unit and golden tests
+        run: npm test
+
+      - name: Check TypeScript
+        run: npm run check
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser acceptance tests
+        run: npm run test:e2e
+
+      - name: Verify package contents
+        run: npm run pack:dry-run
+
+      - name: Verify local-only production policy
+        run: |
+          grep -F "connect-src 'none'" dist/index.html
+          if grep -E "https?://|fetch\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon" dist/index.html dist/main.js dist/validation.js dist/core.js; then
+            echo "Unexpected DER Builder transport found in production entry files." >&2
+            exit 1
+          fi
+          if grep -R -E "fetch\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon" src --include='*.ts'; then
+            echo "Unexpected remote transport found in DER Builder source." >&2
+            exit 1
+          fi
+
+      - name: Reject generated source changes
+        run: |
+          git diff --check
+          git diff --exit-code
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - name: Retain deployed source for verification
+        uses: actions/upload-artifact@v7
+        with:
+          name: derbuilder-pages-source
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    name: Deploy and verify site
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download deployed source
+        uses: actions/download-artifact@v8
+        with:
+          name: derbuilder-pages-source
+          path: ${{ runner.temp }}/derbuilder-pages-source
+
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Verify published application files
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          site_url="${SITE_URL%/}"
+          source_dir="$RUNNER_TEMP/derbuilder-pages-source"
+          download_dir="$RUNNER_TEMP/derbuilder-pages-download"
+
+          verify_site() {
+            local failed=0
+            local relative_path
+            local source_file
+            local target_file
+
+            while IFS= read -r -d '' source_file; do
+              relative_path="${source_file#"$source_dir/"}"
+              target_file="$download_dir/$relative_path"
+              mkdir -p "$(dirname "$target_file")"
+
+              if ! curl --fail --location --silent --show-error \
+                "$site_url/$relative_path?deployment=$GITHUB_SHA" \
+                --output "$target_file"; then
+                failed=1
+                continue
+              fi
+
+              if ! cmp --silent "$source_file" "$target_file"; then
+                echo "Published file does not match $relative_path." >&2
+                failed=1
+              fi
+            done < <(find "$source_dir" -type f -print0)
+
+            return "$failed"
+          }
+
+          for attempt in $(seq 1 20); do
+            if verify_site; then
+              echo "Verified: $site_url/" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              echo "GitHub Pages did not serve the deployed files within one minute." >&2
+              exit 1
+            fi
+            echo "Published files are not ready (attempt $attempt/20); retrying in 3 seconds."
+            sleep 3
+          done

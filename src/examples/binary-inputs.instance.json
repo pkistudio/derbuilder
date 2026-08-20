@@ -1,0 +1,5 @@
+{
+  "payload": { "hex": "de ad be ef" },
+  "label": { "utf8": "hello" },
+  "flags": { "bytes": { "base64": "oA==" }, "unusedBits": 5 }
+}
