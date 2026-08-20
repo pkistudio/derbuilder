@@ -1,0 +1,48 @@
+{
+  "version": "v3",
+  "serialNumber": 42,
+  "signature": {
+    "algorithm": "sha256WithRSAEncryption",
+    "parameters": null
+  },
+  "issuer": {
+    "selected": "rdnSequence",
+    "value": [
+      [
+        {
+          "type": "commonName",
+          "value": { "selected": "utf8String", "value": "Example CA" }
+        }
+      ]
+    ]
+  },
+  "validity": {
+    "notBefore": { "selected": "utcTime", "value": "260520000000Z" },
+    "notAfter": { "selected": "utcTime", "value": "270520000000Z" }
+  },
+  "subject": {
+    "selected": "rdnSequence",
+    "value": [
+      [
+        {
+          "type": "commonName",
+          "value": { "selected": "utf8String", "value": "Example EE" }
+        }
+      ]
+    ]
+  },
+  "subjectPublicKeyInfo": {
+    "algorithm": {
+      "algorithm": "rsaEncryption",
+      "parameters": null
+    },
+    "subjectPublicKey": { "bytes": { "hex": "00" }, "unusedBits": 0 }
+  },
+  "extensions": [
+    {
+      "extnID": "basicConstraints",
+      "critical": true,
+      "extnValue": { "hex": "30030101ff" }
+    }
+  ]
+}

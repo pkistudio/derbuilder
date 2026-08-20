@@ -1,0 +1,9 @@
+ExampleTagged DEFINITIONS ::= BEGIN
+
+TaggedPerson ::= SEQUENCE {
+  name [0] EXPLICIT UTF8String,
+  age [1] IMPLICIT INTEGER OPTIONAL,
+  email [2] IMPLICIT IA5String OPTIONAL
+}
+
+END

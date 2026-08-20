@@ -1,0 +1,108 @@
+{
+  "sourceRepository": "pkistudio/asn1instancebuilder",
+  "sourceCommit": "6ed3d620bf5ab7bffbb557dd9fe065daaf3788b3",
+  "cases": [
+    {
+      "definition": "person.asn1",
+      "typeName": "Person",
+      "input": "person.instance.json",
+      "derHex": "301e0c05416c69636502012a1612616c696365406578616d706c652e74657374"
+    },
+    {
+      "definition": "tagged-person.asn1",
+      "typeName": "TaggedPerson",
+      "input": "tagged-person.instance.json",
+      "derHex": "3020a0070c05416c69636581012a8212616c696365406578616d706c652e74657374"
+    },
+    {
+      "definition": "binary-inputs.asn1",
+      "typeName": "BinaryRecord",
+      "input": "binary-inputs.instance.json",
+      "derHex": "30110404deadbeef040568656c6c6f030205a0"
+    },
+    {
+      "definition": "defaults-and-enumerated.asn1",
+      "typeName": "DefaultRecord",
+      "input": "defaults-and-enumerated.instance.json",
+      "derHex": "30110a01010c0c6e6565647320726576696577"
+    },
+    {
+      "definition": "negative-integer.asn1",
+      "typeName": "SignedRecord",
+      "input": "negative-integer.instance.json",
+      "derHex": "30070201ff0202ff7f"
+    },
+    {
+      "definition": "module-tags.asn1",
+      "typeName": "VersionedSerial",
+      "input": "x509-version.instance.json",
+      "derHex": "300780010202023039"
+    },
+    {
+      "definition": "x509-version.asn1",
+      "typeName": "TBSCertificatePrefix",
+      "input": "x509-version.instance.json",
+      "derHex": "3009a00302010202023039"
+    },
+    {
+      "definition": "oid-names.asn1",
+      "typeName": "AlgorithmIdentifier",
+      "input": "oid-names.instance.json",
+      "derHex": "300d06092a864886f70d01010b0500"
+    },
+    {
+      "definition": "minimal-tbs-certificate.asn1",
+      "typeName": "TBSCertificate",
+      "input": "minimal-tbs-certificate.instance.json",
+      "derHex": "30818fa00302010202012a300d06092a864886f70d01010b050030153113301106035504030c0a4578616d706c65204341301e170d3236303532303030303030305a170d3237303532303030303030305a30153113301106035504030c0a4578616d706c652045453013300d06092a864886f70d010101050003020000a3133011300f0603551d130101ff040530030101ff"
+    },
+    {
+      "definition": "minimal-tbs-certificate.asn1",
+      "typeName": "Certificate",
+      "input": "minimal-certificate.instance.json",
+      "derHex": "3081a830818fa00302010202012a300d06092a864886f70d01010b050030153113301106035504030c0a4578616d706c65204341301e170d3236303532303030303030305a170d3237303532303030303030305a30153113301106035504030c0a4578616d706c652045453013300d06092a864886f70d010101050003020000a3133011300f0603551d130101ff040530030101ff300d06092a864886f70d01010b0500030500deadbeef"
+    },
+    {
+      "definition": "minimal-tbs-certificate.asn1",
+      "typeName": "Certificate",
+      "input": "minimal-certificate-v1-no-extensions.instance.json",
+      "derHex": "30818d307502012b300d06092a864886f70d01010b050030153113301106035504030c0a4578616d706c65204341301e170d3236303532303030303030305a170d3237303532303030303030305a30153113301106035504030c0a4578616d706c652045453013300d06092a864886f70d010101050003020000300d06092a864886f70d01010b0500030500cafebabe"
+    },
+    {
+      "definition": "minimal-tbs-certificate.asn1",
+      "typeName": "Certificate",
+      "input": "minimal-certificate-v3-no-extensions.instance.json",
+      "derHex": "308192307aa00302010202012c300d06092a864886f70d01010b050030153113301106035504030c0a4578616d706c65204341301e170d3236303532303030303030305a170d3237303532303030303030305a30153113301106035504030c0a4578616d706c652045453013300d06092a864886f70d010101050003020000300d06092a864886f70d01010b0500030500feedface"
+    },
+    {
+      "definition": "minimal-csr.asn1",
+      "typeName": "CertificationRequest",
+      "input": "minimal-csr.instance.json",
+      "derHex": "3064304a02010030153113301106035504030c0a4578616d706c652045453013300d06092a864886f70d010101050003020000a019301706092a864886f70d010907310a04086368616e67656974300d06092a864886f70d01010b0500030700010203040506"
+    },
+    {
+      "definition": "minimal-csr.asn1",
+      "typeName": "CertificationRequest",
+      "input": "minimal-csr-empty-attributes.instance.json",
+      "derHex": "3049303102010030153113301106035504030c0a4578616d706c652045453013300d06092a864886f70d010101050003020000a000300d06092a864886f70d01010b05000305000a0b0c0d"
+    },
+    {
+      "definition": "minimal-crl.asn1",
+      "typeName": "CertificateList",
+      "input": "minimal-crl.instance.json",
+      "derHex": "30818e3072020101300d06092a864886f70d01010b050030153113301106035504030c0a4578616d706c65204341170d3236303532303030303030305a170d3236303632303030303030305a3014301202012a170d3236303532313030303030305aa0133011300f0603551d2304083006800401020304300d06092a864886f70d01010b05000309000102030405060708"
+    },
+    {
+      "definition": "minimal-crl.asn1",
+      "typeName": "CertificateList",
+      "input": "minimal-crl-no-revoked.instance.json",
+      "derHex": "304d3035300d06092a864886f70d01010b050030153113301106035504030c0a4578616d706c65204341170d3236303532303030303030305a300d06092a864886f70d01010b050003050011121314"
+    },
+    {
+      "definition": "pki-components.asn1",
+      "typeName": "PkiBundle",
+      "input": "pki-components.instance.json",
+      "derHex": "306c300d06092a864886f70d01010b050030153113301106035504030c0a4578616d706c65204341301e170d3236303532303030303030305a170d3237303532303030303030305a3013300d06092a864886f70d010101050003020000300f0603551d130101ff040530030101ff"
+    }
+  ]
+}

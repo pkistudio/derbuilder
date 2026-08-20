@@ -538,8 +538,12 @@ API or implementation contracts.
 ### NFR-01: Security and Network Boundary
 
 - Set a production CSP containing `connect-src 'none'`.
-- Do not include `fetch`, XHR, WebSocket, EventSource, or sendBeacon in
-  source or production bundles.
+- Do not include `fetch`, XHR, WebSocket, EventSource, or sendBeacon in DER
+  Builder-authored source. The pinned DerEditor viewer contains a guarded
+  standalone OID-file fallback; injected packaged resolver state must make that
+  branch unreachable. Enforce the runtime boundary with resolver-injection
+  policy tests, `connect-src 'none'`, and zero-external-request E2E coverage
+  rather than rejecting the inert token in bundled third-party code.
 - Escape user input instead of inserting it as HTML.
 - Never evaluate unknown Definition Bundle metadata as code.
 - Release object URLs and temporary local-storage data at the end of their
@@ -709,7 +713,8 @@ PkiStudio repository.
 `.github/workflows/pages.yml` runs on pushes to `main` and manual dispatch.
 
 - Repeat CI-equivalent validation before packaging `dist`.
-- Verify CSP and the absence of remote transport in production output.
+- Verify CSP, transport-free DER Builder entry files and source, and the absence
+  of external requests in browser acceptance tests.
 - Confirm that generation leaves no source changes.
 - Deploy the Pages artifact.
 - Compare every published file with a retained source artifact.

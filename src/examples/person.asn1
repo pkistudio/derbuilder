@@ -1,0 +1,9 @@
+Example DEFINITIONS ::= BEGIN
+
+Person ::= SEQUENCE {
+  name UTF8String,
+  age INTEGER OPTIONAL,
+  email IA5String OPTIONAL
+}
+
+END

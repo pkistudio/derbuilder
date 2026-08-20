@@ -1,0 +1,16 @@
+DefaultExample DEFINITIONS ::= BEGIN
+
+Status ::= ENUMERATED {
+  ok(0),
+  warning(1),
+  failed(2)
+}
+
+DefaultRecord ::= SEQUENCE {
+  enabled BOOLEAN DEFAULT TRUE,
+  retryCount INTEGER DEFAULT 3,
+  status Status DEFAULT ok,
+  note UTF8String OPTIONAL
+}
+
+END

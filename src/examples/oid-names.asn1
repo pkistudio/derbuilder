@@ -1,0 +1,8 @@
+OidNameExample DEFINITIONS ::= BEGIN
+
+AlgorithmIdentifier ::= SEQUENCE {
+  algorithm OBJECT IDENTIFIER,
+  parameters NULL OPTIONAL
+}
+
+END

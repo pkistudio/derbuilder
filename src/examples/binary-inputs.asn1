@@ -1,0 +1,9 @@
+BinaryInputExample DEFINITIONS ::= BEGIN
+
+BinaryRecord ::= SEQUENCE {
+  payload OCTET STRING,
+  label OCTET STRING OPTIONAL,
+  flags BIT STRING OPTIONAL
+}
+
+END

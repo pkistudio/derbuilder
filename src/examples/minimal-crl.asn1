@@ -1,0 +1,67 @@
+MinimalCrlExample DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+AlgorithmIdentifier ::= SEQUENCE {
+  algorithm OBJECT IDENTIFIER,
+  parameters NULL OPTIONAL
+}
+
+AttributeTypeAndValue ::= SEQUENCE {
+  type OBJECT IDENTIFIER,
+  value DirectoryString
+}
+
+DirectoryString ::= CHOICE {
+  utf8String UTF8String,
+  printableString PrintableString
+}
+
+RelativeDistinguishedName ::= SET OF AttributeTypeAndValue
+
+RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
+Name ::= CHOICE {
+  rdnSequence RDNSequence
+}
+
+Time ::= CHOICE {
+  utcTime UTCTime,
+  generalTime GeneralizedTime
+}
+
+Extension ::= SEQUENCE {
+  extnID OBJECT IDENTIFIER,
+  critical BOOLEAN DEFAULT FALSE,
+  extnValue OCTET STRING
+}
+
+Extensions ::= SEQUENCE OF Extension
+
+Version ::= INTEGER {
+  v1(0),
+  v2(1)
+}
+
+RevokedCertificate ::= SEQUENCE {
+  userCertificate INTEGER,
+  revocationDate Time,
+  crlEntryExtensions Extensions OPTIONAL
+}
+
+RevokedCertificates ::= SEQUENCE OF RevokedCertificate
+
+TBSCertList ::= SEQUENCE {
+  version Version OPTIONAL,
+  signature AlgorithmIdentifier,
+  issuer Name,
+  thisUpdate Time,
+  nextUpdate Time OPTIONAL,
+  revokedCertificates RevokedCertificates OPTIONAL,
+  crlExtensions [0] EXPLICIT Extensions OPTIONAL
+}
+
+CertificateList ::= SEQUENCE {
+  tbsCertList TBSCertList,
+  signatureAlgorithm AlgorithmIdentifier,
+  signatureValue BIT STRING
+}
+
+END

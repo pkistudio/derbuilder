@@ -1,0 +1,41 @@
+{
+  "id": "pkistudio.example.person",
+  "version": "1.0.0",
+  "label": "Person Example",
+  "description": "Example Definition Bundle for the Person ASN.1 type.",
+  "schema": {
+    "format": "asn1",
+    "sourceName": "person.asn1",
+    "source": "Example DEFINITIONS ::= BEGIN\n\nPerson ::= SEQUENCE {\n  name UTF8String,\n  age INTEGER OPTIONAL,\n  email IA5String OPTIONAL\n}\n\nEND"
+  },
+  "entries": [
+    {
+      "id": "person",
+      "typeName": "Person",
+      "label": "Person",
+      "description": "Simple person record used by documentation and smoke tests.",
+      "sampleInput": {
+        "name": "Alice",
+        "age": 42,
+        "email": "alice@example.test"
+      },
+      "uiProfile": {
+        "id": "person-basic-profile",
+        "typeName": "Person",
+        "fields": {
+          "name": {
+            "label": "Full name",
+            "placeholder": "Alice"
+          },
+          "age": {
+            "label": "Age"
+          },
+          "email": {
+            "label": "Email",
+            "placeholder": "alice@example.test"
+          }
+        }
+      }
+    }
+  ]
+}

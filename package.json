@@ -1,0 +1,80 @@
+{
+  "name": "@pkistudio/derbuilder",
+  "version": "0.1.0",
+  "description": "Browser-first ASN.1 instance builder for creating and inspecting DER data.",
+  "type": "module",
+  "main": "./dist/core.js",
+  "module": "./dist/core.js",
+  "types": "./dist/types/core.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/core.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./core": {
+      "types": "./dist/types/core.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./validation": {
+      "types": "./dist/types/validation.d.ts",
+      "import": "./dist/validation.js"
+    },
+    "./app": {
+      "types": "./dist/types/app.d.ts",
+      "import": "./dist/app.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "npm run check && vite build && tsc -p tsconfig.types.json",
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "verify:browser": "npm run build && npm run test:e2e",
+    "pack:dry-run": "npm pack --dry-run",
+    "release:prepare": "node scripts/prepare-release.mjs apply",
+    "verify": "npm test && npm run check && npm run build && npm run pack:dry-run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pkistudio/derbuilder"
+  },
+  "bugs": {
+    "url": "https://github.com/pkistudio/derbuilder/issues"
+  },
+  "homepage": "https://pkistudio.github.io/derbuilder/",
+  "keywords": [
+    "asn1",
+    "der",
+    "pki",
+    "x509",
+    "pkistudio"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@pkistudio/dereditor": "0.1.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "24.0.0",
+    "tsx": "4.23.12",
+    "typescript": "5.9.2",
+    "vite": "7.3.6"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "signature": {
+    "algorithm": "sha256WithRSAEncryption",
+    "parameters": { "selected": "null", "value": null }
+  },
+  "issuer": {
+    "selected": "rdnSequence",
+    "value": [
+      [
+        {
+          "type": "commonName",
+          "value": { "selected": "utf8String", "value": "Example CA" }
+        }
+      ]
+    ]
+  },
+  "validity": {
+    "notBefore": { "selected": "utcTime", "value": "260520000000Z" },
+    "notAfter": { "selected": "utcTime", "value": "270520000000Z" }
+  },
+  "subjectPublicKeyInfo": {
+    "algorithm": {
+      "algorithm": "rsaEncryption",
+      "parameters": { "selected": "null", "value": null }
+    },
+    "subjectPublicKey": { "bytes": { "hex": "00" }, "unusedBits": 0 }
+  },
+  "extension": {
+    "extnID": "basicConstraints",
+    "critical": true,
+    "extnValue": { "hex": "30030101ff" }
+  }
+}

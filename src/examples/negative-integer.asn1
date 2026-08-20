@@ -1,0 +1,15 @@
+NegativeIntegerExample DEFINITIONS ::= BEGIN
+
+Delta ::= INTEGER {
+  lower(-129),
+  minusOne(-1),
+  zero(0),
+  upper(127)
+}
+
+SignedRecord ::= SEQUENCE {
+  delta Delta DEFAULT zero,
+  offset INTEGER
+}
+
+END

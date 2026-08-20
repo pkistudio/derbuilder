@@ -1,0 +1,39 @@
+{
+  "tbsCertList": {
+    "version": "v2",
+    "signature": {
+      "algorithm": "sha256WithRSAEncryption",
+      "parameters": null
+    },
+    "issuer": {
+      "selected": "rdnSequence",
+      "value": [
+        [
+          {
+            "type": "commonName",
+            "value": { "selected": "utf8String", "value": "Example CA" }
+          }
+        ]
+      ]
+    },
+    "thisUpdate": { "selected": "utcTime", "value": "260520000000Z" },
+    "nextUpdate": { "selected": "utcTime", "value": "260620000000Z" },
+    "revokedCertificates": [
+      {
+        "userCertificate": 42,
+        "revocationDate": { "selected": "utcTime", "value": "260521000000Z" }
+      }
+    ],
+    "crlExtensions": [
+      {
+        "extnID": "authorityKeyIdentifier",
+        "extnValue": { "hex": "3006800401020304" }
+      }
+    ]
+  },
+  "signatureAlgorithm": {
+    "algorithm": "sha256WithRSAEncryption",
+    "parameters": null
+  },
+  "signatureValue": { "bytes": { "hex": "0102030405060708" }, "unusedBits": 0 }
+}

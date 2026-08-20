@@ -1,0 +1,34 @@
+{
+  "certificationRequestInfo": {
+    "version": 0,
+    "subject": {
+      "selected": "rdnSequence",
+      "value": [
+        [
+          {
+            "type": "commonName",
+            "value": { "selected": "utf8String", "value": "Example EE" }
+          }
+        ]
+      ]
+    },
+    "subjectPublicKeyInfo": {
+      "algorithm": {
+        "algorithm": "rsaEncryption",
+        "parameters": null
+      },
+      "subjectPublicKey": { "bytes": { "hex": "00" }, "unusedBits": 0 }
+    },
+    "attributes": [
+      {
+        "type": "1.2.840.113549.1.9.7",
+        "values": [{ "utf8": "changeit" }]
+      }
+    ]
+  },
+  "signatureAlgorithm": {
+    "algorithm": "sha256WithRSAEncryption",
+    "parameters": null
+  },
+  "signature": { "bytes": { "hex": "010203040506" }, "unusedBits": 0 }
+}
