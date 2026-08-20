@@ -92,37 +92,12 @@ textarea {
 
 .derbuilder-root {
   display: grid;
-  grid-template-rows: auto minmax(220px, 1fr) minmax(160px, 30vh) 6px var(--api-log-height, 156px);
+  grid-template-rows: auto minmax(220px, 1fr) 6px var(--api-log-height, 156px);
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-}
-
-.derbuilder-generated-panel {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-width: 0;
-  min-height: 0;
-  border: 1px solid var(--panel-border);
-  background: var(--panel);
-  overflow: hidden;
-}
-
-.derbuilder-generated-panel > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid var(--subtle-border);
-  padding: 5px 10px;
-  background: linear-gradient(var(--chrome-start), var(--chrome));
-}
-
-.derbuilder-generated-panel > header span {
-  color: var(--muted);
-  font-size: 12px;
 }
 
 .derbuilder-der-viewer {
@@ -141,7 +116,21 @@ textarea {
 }
 
 .derbuilder-transfer-shell {
+  position: relative;
   overflow: hidden;
+}
+
+.derbuilder-transfer-error {
+  position: absolute;
+  z-index: 1;
+  inset: 16px auto auto 16px;
+  max-width: min(640px, calc(100% - 32px));
+  margin: 0;
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+  padding: 10px 12px;
+  background: Canvas;
+  color: var(--danger);
 }
 
 .derbuilder-root.resizing-rows {
@@ -886,7 +875,7 @@ textarea {
   }
 
   .derbuilder-root {
-    grid-template-rows: auto minmax(260px, 1fr) minmax(180px, 30vh) 6px var(--api-log-height, 180px);
+    grid-template-rows: auto minmax(260px, 1fr) 6px var(--api-log-height, 180px);
   }
 
   .derbuilder-panel {

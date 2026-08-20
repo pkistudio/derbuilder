@@ -17,6 +17,10 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return DerEditorCore.bytesToBase64(bytes);
 }
 
+export function base64ToBytes(text: string): Uint8Array {
+  return DerEditorCore.base64ToBytes(text);
+}
+
 export function bytesToHex(bytes: Uint8Array): string {
   return DerEditorCore.toLowerHexString(bytes);
 }

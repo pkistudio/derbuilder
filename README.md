@@ -18,8 +18,8 @@ production page enforces `connect-src 'none'`.
   as deterministic DER.
 - Load portable Definition Bundles and a catalog of PKI-oriented NamedObjects.
 - Edit one Instance value through synchronized Form and JSON views.
-- Inspect successful output in an embedded read-only DerEditor and use its
-  public Send to action for an editable standalone view.
+- Open successful output in a new editable DerEditor tab while keeping the
+  builder workspace focused on definition and instance input.
 - Use Core, Validation, and App APIs independently through controlled package
   exports.
 
@@ -73,6 +73,9 @@ const result = await app.build({ typeName: 'Person' });
 if (result.ok) console.log(result.document.der);
 else console.error(result.error, result.instanceDiagnostics);
 ```
+
+Successful builds open a new DerEditor tab by default. Embedded hosts that only
+need the returned bytes can pass `openViewerTab: false`.
 
 The application is deployed to GitHub Pages only after validation on `main`.
 The first deployment requires Pages to use **GitHub Actions** as its source;
