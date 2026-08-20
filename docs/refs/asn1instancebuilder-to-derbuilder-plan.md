@@ -1,72 +1,120 @@
-# ASN.1 Instance Builder から DER Builder への再構築計画
+# ASN.1 Instance Builder to DER Builder Rebuild Plan
 
-## 1. 文書の目的
+## 1. Purpose
 
-この文書は、`pkistudio/asn1instancebuilder` の機能を `pkistudio/derbuilder` として作り直すための要件と開発計画を定義する。
+This document defines the requirements and delivery plan for rebuilding the
+functionality of `pkistudio/asn1instancebuilder` as
+`pkistudio/derbuilder`.
 
-実装上の基準は `pkistudio/x509gadgets` とし、次の要素を同じ方針へそろえる。
+`pkistudio/x509gadgets` is the implementation and operations reference. DER
+Builder will follow it for:
 
-- リポジトリの外形、公開エントリーポイント、ドキュメント構成
-- 公開済み `@pkistudio/dereditor` npm パッケージの取り込み境界
-- TypeScript、Vite、テスト、GitHub Pages、GitHub Release、npm 公開のワークフロー
-- ローカル完結、依存関係の固定、CI によるポリシー検証
+- repository shape, public entry points, and documentation structure;
+- consumption of the published `@pkistudio/dereditor` npm package;
+- TypeScript, Vite, testing, GitHub Pages, GitHub Release, and npm workflows;
+- local-only processing, exact dependency versions, and CI policy checks; and
+- English as the sole normative language for repository documentation.
 
-この文書の作成時点では、アプリケーションコード、設定、ワークフローの実装は行わない。`docs/refs` 配下の計画書だけを成果物とする。
+This planning change does not implement application code, configuration, or
+workflows. The only deliverable at this point is this document under
+`docs/refs`.
 
-## 2. 参照ベースライン
+## 2. Reference Baselines
 
-調査日は 2026-08-20 UTC とし、以下のコミットをベースラインとする。
+The references were reviewed on 2026-08-20 UTC. The following commits are the
+planning baselines.
 
-| 用途 | 参照先 | コミット | 採用する内容 |
+| Purpose | Reference | Commit | Adopted concerns |
 | --- | --- | --- | --- |
-| リポジトリと運用の正本 | [`pkistudio/x509gadgets`](https://github.com/pkistudio/x509gadgets/tree/15329e1f98f856b8f9ff8b52624d9d9cce0b4fca) | `15329e1f98f856b8f9ff8b52624d9d9cce0b4fca` | 構成、DerEditor 境界、CI、E2E、Pages、Release、npm 公開、依存ポリシー |
-| 機能移植元 | [`pkistudio/asn1instancebuilder`](https://github.com/pkistudio/asn1instancebuilder/tree/6ed3d620bf5ab7bffbb557dd9fe065daaf3788b3) | `6ed3d620bf5ab7bffbb557dd9fe065daaf3788b3` | ASN.1 パーサー、Schema Model、診断、DER 生成、Definition Bundle、UI Profile、NamedObjects、ブラウザー UI |
-| 旧機能の説明資料 | [`asn1instancebuilder` Wiki](https://github.com/pkistudio/asn1instancebuilder/wiki) | `7eddd65a87184070797b0b46ff681a8d648f6046` | 利用フロー、入力モデル、既知の制限、埋め込み API |
+| Repository and operations source of truth | [`pkistudio/x509gadgets`](https://github.com/pkistudio/x509gadgets/tree/15329e1f98f856b8f9ff8b52624d9d9cce0b4fca) | `15329e1f98f856b8f9ff8b52624d9d9cce0b4fca` | Structure, DerEditor boundary, CI, E2E, Pages, Release, npm publishing, and dependency policy |
+| Feature migration source | [`pkistudio/asn1instancebuilder`](https://github.com/pkistudio/asn1instancebuilder/tree/6ed3d620bf5ab7bffbb557dd9fe065daaf3788b3) | `6ed3d620bf5ab7bffbb557dd9fe065daaf3788b3` | ASN.1 parser, Schema Model, diagnostics, DER generation, Definition Bundles, UI Profiles, NamedObjects, and browser UI |
+| Legacy feature documentation | [ASN.1 Instance Builder Wiki](https://github.com/pkistudio/asn1instancebuilder/wiki) | `7eddd65a87184070797b0b46ff681a8d648f6046` | User flows, input model, known limits, and embedding API |
 
-参照間で競合する場合は、次の優先順位を適用する。
+If the references conflict, apply the following priority:
 
-1. リポジトリ構成、依存関係、検証・公開手順は `x509gadgets` を優先する。
-2. ASN.1 入力、診断、DER 生成、Definition Bundle、UI Profile の振る舞いは旧 `asn1instancebuilder` の実装とテストを優先する。
-3. Wiki と実装が異なる場合は、テストで確認できる実装を現行挙動とみなす。
-4. DER Builder で意図的に変更する項目は、この文書で明記する。
+1. Use `x509gadgets` for repository structure, dependencies, validation, and
+   publication procedures.
+2. Use the legacy `asn1instancebuilder` implementation and tests for ASN.1
+   input, diagnostics, DER generation, Definition Bundle, and UI Profile
+   behavior.
+3. If the Wiki and implementation differ, treat behavior demonstrated by tests
+   as the current behavior.
+4. State every intentional DER Builder behavior change in repository
+   documentation.
 
-## 3. 再構築の基本方針
+## 3. Rebuild Principles
 
-### 3.1 製品と公開名
+### 3.1 Product and Public Names
 
-- 製品名を **DER Builder** とする。
-- GitHub リポジトリを `pkistudio/derbuilder` とする。
-- npm パッケージを `@pkistudio/derbuilder` とする。
-- GitHub Pages の公開先を `https://pkistudio.github.io/derbuilder/` とする。
-- コード上の公開名は `DerBuilder`、`initDerBuilder`、`DER_BUILDER_VERSION` のように統一する。
-- CSS、DOM id、ローカル保存キーの接頭辞は `derbuilder` または短縮形 `derb` に統一し、`asn1ib` を新規公開面へ残さない。
-- 旧 `@pkistudio/asn1instancebuilder` の互換エイリアスは初期スコープに含めない。必要になった場合は別の互換性計画で扱う。
+- The product name is **DER Builder**.
+- The GitHub repository is `pkistudio/derbuilder`.
+- The npm package is `@pkistudio/derbuilder`.
+- The GitHub Pages URL is `https://pkistudio.github.io/derbuilder/`.
+- Public code names use forms such as `DerBuilder`, `initDerBuilder`, and
+  `DER_BUILDER_VERSION`.
+- CSS classes, DOM ids, and local storage keys use `derbuilder` or the short
+  prefix `derb`. New public surfaces must not retain `asn1ib`.
+- Compatibility aliases for `@pkistudio/asn1instancebuilder` are outside the
+  initial scope. If needed, they require a separate compatibility plan.
 
-### 3.2 再利用と再実装の境界
+### 3.2 Reuse and Reimplementation Boundary
 
-- 旧実装の機能とテストケースを移植元として利用するが、旧リポジトリ構造、旧ワークフロー、旧 PkiStudioJS 連携をそのまま複製しない。
-- `@pkistudio/pkistudiojs` は使用しない。
-- DerEditor のソース、静的ファイル、内部パス、Git リポジトリをコピーまたは直接参照しない。
-- 他の PkiStudio リポジトリを submodule、Git dependency、workspace link、CI checkout で取り込まない。
-- PkiStudio スコープの実行時依存は、公開済みで完全固定した `@pkistudio/dereditor` だけにする。
-- ASN.1 の定義解析、入力診断、DER 生成は DER Builder 自身の責務とし、DerEditor は生成結果の解析確認、表示、編集・保存導線だけに利用する。
+- The legacy behavior and test cases are migration inputs, but the old
+  repository shape, workflows, and PkiStudioJS integration are not copied.
+- `@pkistudio/pkistudiojs` must not be used.
+- DerEditor source, static files, internal paths, and Git repositories must not
+  be copied or referenced directly.
+- No other PkiStudio repository may be consumed through a submodule, Git
+  dependency, workspace link, or CI checkout.
+- The only runtime dependency in the PkiStudio npm scope is an exactly pinned,
+  published `@pkistudio/dereditor` package.
+- DER Builder owns ASN.1 definition parsing, input diagnostics, and DER
+  generation. DerEditor is responsible only for parsing confirmation,
+  presentation, and the edit/save handoff for generated output.
 
-### 3.3 「x509gadgets と同じ構成」の解釈
+### 3.3 Meaning of “the Same Repository Structure as x509gadgets”
 
-トップレベルの構成、公開ファサード、検証・公開フローを同じにする。ASN.1 パーサーとフォーム生成は規模が大きいため、内部実装は非公開サブモジュールへ分割してよい。ただし、公開 API と依存境界はルート直下のファサードから管理する。
+The top-level shape, public facades, validation process, and release process
+follow `x509gadgets`. The ASN.1 parser and generated form system are larger
+than the X.509 Gadgets domain layer, so implementation details may be separated
+into private modules. Public APIs and dependency boundaries remain controlled
+by root-level facade modules.
 
-旧リポジトリ固有の以下の要素は引き継がない。
+The following legacy repository elements will not be retained:
 
-- `.devcontainer` による Wiki 用 Gollum 環境
-- `.vscode` 固有タスク
-- `viewer.html` と `src/viewer.ts`
-- `vite.app.config.ts` を含む二重の Vite ビルド構成
-- `sync-managed-rules.yml`、WordPress 公開など `x509gadgets` にないワークフロー
-- Wiki を唯一の仕様正本とする運用
+- the Gollum Wiki environment under `.devcontainer`;
+- repository-specific `.vscode` tasks;
+- `viewer.html` and `src/viewer.ts`;
+- the dual Vite configuration using `vite.app.config.ts`;
+- `sync-managed-rules.yml`, WordPress publication, and workflows not present
+  in `x509gadgets`; and
+- the Wiki as the only source of normative specifications.
 
-## 4. 対象リポジトリ構成
+## 4. Documentation Language Policy
 
-初期実装では、次の外形を目標とする。
+English is the sole normative language for documentation stored in this
+repository.
+
+- `README.md`, all files under `docs/`, ADRs, contributor guidance,
+  deployment and release guides, package API documentation, and prose in
+  checked-in examples must be written in English.
+- New documentation and edits to existing documentation must use clear
+  technical English.
+- Repository documentation must not maintain a second, separately normative
+  translation beside the English source because parallel copies can drift.
+- If localized material is needed later, it must be generated or maintained
+  outside the normative repository documentation and must link back to the
+  English source.
+- Product names, identifiers, ASN.1 keywords, filenames, code, and protocol
+  terms retain their canonical spelling.
+- Pull request review must treat non-English repository documentation as a
+  documentation defect.
+- This policy applies to documentation, not to user-provided ASN.1 data or
+  external metadata processed by the application.
+
+## 5. Target Repository Shape
+
+The initial implementation should use the following structure.
 
 ```text
 derbuilder/
@@ -130,391 +178,486 @@ derbuilder/
 └── vite.config.ts
 ```
 
-このツリーは責務の基準であり、実装開始前の設計レビューで内部ファイルをさらに分割してよい。次の規則は維持する。
+This tree defines responsibility boundaries. An implementation design review
+may split internal files further while preserving these rules:
 
-- `src/core.ts` は UI 非依存の公開 Core API ファサードとする。
-- `src/validation.ts` は診断 API の公開ファサードとする。
-- `src/app.ts` はブラウザーアプリと app 固有型の公開ファサードとする。
-- `src/dereditor-adapter.ts` に DerEditor との相互運用を集約する。
-- `src/model.ts` に公開データモデルを集約する。
-- `src/internal/` は npm の `exports` に公開しない。
-- テスト専用 fixture と製品に同梱する NamedObjects データを混同しない。製品用データは `src` 内、ゴールデンテスト用データは `test/fixtures` 内に置く。
+- `src/core.ts` is the UI-independent public Core API facade.
+- `src/validation.ts` is the public diagnostics API facade.
+- `src/app.ts` is the public browser application and app-specific types
+  facade.
+- `src/dereditor-adapter.ts` contains DerEditor interoperability.
+- `src/model.ts` contains public data models.
+- `src/internal/` is not exposed through npm `exports`.
+- Test-only fixtures and NamedObjects shipped in the product are distinct.
+  Product data belongs under `src`; golden test data belongs under
+  `test/fixtures`.
 
-## 5. 公開パッケージ要件
+## 6. Public Package Requirements
 
-`package.json` の公開面は次を基本とする。
+The package should expose the following entry points.
 
-| import | 責務 |
+| Import | Responsibility |
 | --- | --- |
-| `@pkistudio/derbuilder` | Core API。互換性を保つため主要な診断 API も再 export する |
-| `@pkistudio/derbuilder/core` | Core API の明示的エイリアス |
-| `@pkistudio/derbuilder/validation` | Schema、Instance、Definition Bundle の診断 API と型 |
-| `@pkistudio/derbuilder/app` | `initDerBuilder`、Definition Bundle、UI Profile、NamedObjects |
-| `@pkistudio/derbuilder/styles.css` | ブラウザーアプリのスタイル |
+| `@pkistudio/derbuilder` | Core API, including re-exported primary diagnostics for practical compatibility |
+| `@pkistudio/derbuilder/core` | Explicit Core API alias |
+| `@pkistudio/derbuilder/validation` | Schema, Instance, and Definition Bundle diagnostics APIs and types |
+| `@pkistudio/derbuilder/app` | `initDerBuilder`, Definition Bundles, UI Profiles, and NamedObjects |
+| `@pkistudio/derbuilder/styles.css` | Browser application styles |
 
-追加要件は次のとおり。
+Additional package requirements:
 
-- ESM のみを対象とする。
-- `dist`、`docs`、`README.md`、`LICENSE` だけを npm パッケージに含める。
-- 型宣言を `dist/types` に生成する。
-- 公開されない内部モジュールへ利用者が到達できないよう `exports` を明示する。
-- `publishConfig.access` は `public`、registry は `https://registry.npmjs.org/` とする。
-- 直接依存は完全固定し、`package-lock.json` をコミットする。
-- 初回バージョンは `0.1.0` とし、タグと GitHub Release 名は `v` なしの `X.Y.Z` とする。
+- Publish ESM only.
+- Include only `dist`, `docs`, `README.md`, and `LICENSE` in the npm
+  package.
+- Emit declarations under `dist/types`.
+- Use explicit `exports` so consumers cannot depend on private modules.
+- Set `publishConfig.access` to `public` and the registry to
+  `https://registry.npmjs.org/`.
+- Pin direct dependencies exactly and commit `package-lock.json`.
+- Start at version `0.1.0`. Tags and GitHub Release names use `X.Y.Z`
+  without a `v` prefix.
 
-## 6. 機能要件
+## 7. Functional Requirements
 
-### FR-01: ローカル完結
+### FR-01: Local-Only Processing
 
-- 定義、Instance JSON、Definition Bundle、生成 DER の処理をブラウザー内で完結させる。
-- 外部 ASN.1 定義、OID 表、スキーマ、サンプル、Viewer コードを実行時に取得しない。
-- ファイル、クリップボード、ダウンロード、同一オリジンの DerEditor 転送だけをブラウザー I/O とする。
+- Process definitions, Instance JSON, Definition Bundles, and generated DER
+  entirely in the browser.
+- Do not retrieve external ASN.1 definitions, OID tables, schemas, samples, or
+  viewer code at runtime.
+- Browser I/O is limited to files, clipboard access, downloads, and
+  same-origin DerEditor transfer.
 
-### FR-02: ASN.1 定義の入力
+### FR-02: ASN.1 Definition Input
 
-- `.asn1`、`.txt` の ASN.1 定義テキストをローカルファイルから読み込めること。
-- ASN.1 定義テキストをクリップボードから読み込めること。
-- Schema Model JSON をローカルファイルまたは API から読み込めること。
-- 入力内容から ASN.1 テキストと Schema Model JSON を判別すること。
-- 定義ワークスペースを閉じると、定義、選択型、入力、診断、生成結果を一貫してクリアすること。
+- Load ASN.1 definition text from local `.asn1` and `.txt` files.
+- Load ASN.1 definition text from the clipboard.
+- Load Schema Model JSON from a local file or host API.
+- Distinguish ASN.1 text from Schema Model JSON.
+- Closing the definition workspace clears the definition, selected type,
+  input, diagnostics, and generated result consistently.
 
-### FR-03: ASN.1 定義パーサー
+### FR-03: ASN.1 Definition Parser
 
-以下の既存サブセットを維持する。
+Preserve the following legacy subset:
 
-- `BOOLEAN`
-- 正数・負数・名前付き値を含む `INTEGER`
-- `BIT STRING`
-- `OCTET STRING`
-- `NULL`
-- `OBJECT IDENTIFIER`
-- `UTF8String`、`PrintableString`、`IA5String`
-- `UTCTime`、`GeneralizedTime`
-- `ENUMERATED`
-- `SEQUENCE`、`SET`、`CHOICE`
-- `SEQUENCE OF`、`SET OF`
-- 定義済み型の参照
-- `[0]` から `[30]` までの low-form context-specific `EXPLICIT`／`IMPLICIT` タグ
-- モジュールヘッダーの `EXPLICIT TAGS`、`IMPLICIT TAGS`、`AUTOMATIC TAGS`
-- `SEQUENCE`、`SET`、`CHOICE` 構成要素への automatic tag 割り当て
-- `OPTIONAL`
-- `BOOLEAN`、`INTEGER`、`ENUMERATED` の `DEFAULT`
-- `--` から行末までのコメント
+- `BOOLEAN`;
+- positive, negative, and named `INTEGER` values;
+- `BIT STRING`;
+- `OCTET STRING`;
+- `NULL`;
+- `OBJECT IDENTIFIER`;
+- `UTF8String`, `PrintableString`, and `IA5String`;
+- `UTCTime` and `GeneralizedTime`;
+- `ENUMERATED`;
+- `SEQUENCE`, `SET`, and `CHOICE`;
+- `SEQUENCE OF` and `SET OF`;
+- references to defined types;
+- low-form context-specific `EXPLICIT` and `IMPLICIT` tags from `[0]`
+  through `[30]`;
+- `EXPLICIT TAGS`, `IMPLICIT TAGS`, and `AUTOMATIC TAGS` module headers;
+- automatic tagging of `SEQUENCE`, `SET`, and `CHOICE` components;
+- `OPTIONAL`;
+- `DEFAULT` for `BOOLEAN`, `INTEGER`, and `ENUMERATED`; and
+- comments beginning with `--` and ending at the end of the line.
 
-構文エラーは、少なくとも問題のトークンとオフセットを含む安定したエラーとして返す。
+Syntax errors must return a stable error containing at least the relevant
+token and offset.
 
 ### FR-04: Schema Model
 
-- `Asn1SchemaModule` をパーサー、診断、DER 生成、フォーム、ホスト API の共通契約とする。
-- モジュール名、tag default、OID 名、型定義を表現する。
-- 型モデルで primitive、integer、enumerated、tagged、sequence、set、choice、sequenceOf、setOf、defined を表現する。
-- UI Profile は Schema Model を変更せず、Schema Model と Instance JSON が生成処理の唯一の正本であり続ける。
+- Use `Asn1SchemaModule` as the common contract for the parser, diagnostics,
+  DER generation, form generation, and host APIs.
+- Represent module name, tag default, OID names, and type definitions.
+- Represent primitive, integer, enumerated, tagged, sequence, set, choice,
+  sequenceOf, setOf, and defined type nodes.
+- UI Profiles must not modify the Schema Model. The Schema Model and Instance
+  JSON remain the only sources of truth for DER generation.
 
-### FR-05: Schema 診断
+### FR-05: Schema Diagnostics
 
-`validateSchemaModule()` は、例外を投げずに構造化診断を返し、少なくとも次を検出する。
+`validateSchemaModule()` returns structured diagnostics without throwing and
+detects at least:
 
-- 型名の重複
-- 未定義型参照
-- 同一構成内のフィールド名重複
-- 同一構成内の context-specific tag 重複
-- `0..30` 外または整数でない tag 番号
-- 名前付き数値の名前重複
-- 名前付き数値の値重複に対する warning
+- duplicate type names;
+- unknown type references;
+- duplicate field names in one component list;
+- duplicate context-specific tags in one component list;
+- tag numbers that are not integers in the supported `0..30` range;
+- duplicate named-number names; and
+- duplicate named-number values as warnings.
 
-各診断は `severity`、安定した `code`、`message`、フィールドへ到達できる `path` を持つ。
+Each diagnostic has `severity`, a stable `code`, `message`, and a
+`path` that identifies the affected field.
 
 ### FR-06: Instance JSON
 
-Instance JSON を診断と DER 生成の標準入力形式とする。
+Instance JSON is the standard input for diagnostics and DER generation.
 
-- `BOOLEAN` は boolean。
-- `INTEGER` は整数、bigint、10 進文字列、または名前付き値。JSON 経由では bigint を除く。
-- `ENUMERATED` は整数または名前付き値。
-- 文字列型と時刻型は string。
-- `OBJECT IDENTIFIER` は dotted-decimal、組み込み名、または schema 固有名。
-- `NULL` は `null`。
-- `SEQUENCE`／`SET` はフィールド名を key とする object。
-- `SEQUENCE OF`／`SET OF` は array。
-- `CHOICE` は `{ "selected": string, "value": unknown }`。
-- byte input は `Uint8Array`、`0..255` の number array、compact HEX、`{ hex }`、`{ utf8 }`、`{ base64 }`。
-- `BIT STRING` は byte input 単体、または `{ "bytes": ByteInput, "unusedBits": 0..7 }`。
+- `BOOLEAN` uses a boolean.
+- `INTEGER` uses an integer, bigint, decimal string, or named value. JSON
+  transport excludes bigint.
+- `ENUMERATED` uses an integer or named value.
+- String and time types use strings.
+- `OBJECT IDENTIFIER` accepts dotted-decimal text, built-in names, or
+  schema-specific names.
+- `NULL` uses `null`.
+- `SEQUENCE` and `SET` use objects keyed by field name.
+- `SEQUENCE OF` and `SET OF` use arrays.
+- `CHOICE` uses `{ "selected": string, "value": unknown }`.
+- Byte input accepts `Uint8Array`, a `0..255` number array, compact HEX,
+  `{ hex }`, `{ utf8 }`, or `{ base64 }`.
+- `BIT STRING` accepts byte input directly or
+  `{ "bytes": ByteInput, "unusedBits": 0..7 }`.
 
-### FR-07: Instance 診断
+### FR-07: Instance Diagnostics
 
-`validateInstance()` は全フィールドを可能な限り走査し、最初のエラーだけでなく複数の構造化診断を返す。
+`validateInstance()` traverses as many fields as possible and returns
+multiple structured diagnostics rather than only the first error.
 
-少なくとも次を検証する。
+It validates at least:
 
-- 未知の root type
-- required、optional、defaulted field の扱い
-- primitive の値型
-- 名前付き `INTEGER`／`ENUMERATED`
-- `CHOICE` の selected/value 形式と未知 alternative
-- constructed object と OF array の形
-- OID の構文と先頭 arc
-- HEX、Base64、UTF-8、number array の byte input
-- `BIT STRING` の unused bits と空 payload の組み合わせ
-- `UTCTime`／`GeneralizedTime` の DER 形式、範囲、実在日
+- unknown root types;
+- required, optional, and defaulted fields;
+- primitive value types;
+- named `INTEGER` and `ENUMERATED` values;
+- `CHOICE` selected/value shape and unknown alternatives;
+- constructed object and OF array shapes;
+- OID syntax and leading arcs;
+- HEX, Base64, UTF-8, and number-array byte inputs;
+- `BIT STRING` unused bits and empty-payload combinations; and
+- DER `UTCTime` and `GeneralizedTime` shapes, ranges, and real dates.
 
-error が 1 件でもある場合は DER 生成を実行しない。warning は表示したうえで生成を許可する。
+Any error blocks DER generation. Warnings remain visible but do not block
+generation.
 
-### FR-08: DER 生成
+### FR-08: DER Generation
 
-- `createInstance(schema, typeName, input)` は `{ moduleName, typeName, der }` を返す。
-- `encodeValue()` と `resolveDefinedType()` を Core API として提供する。
-- `BOOLEAN true` は `ff`、整数は最小二の補数、長さは definite DER で符号化する。
-- `SET` と `SET OF` の要素を DER byte の辞書順に並べる。
-- default 値と同値のフィールド、および未指定の default field を省略する。
-- explicit tag は内側 TLV を包み、implicit tag は universal tag を context-specific tag に置き換える。
-- エラーには Instance JSON のフィールドまたは配列 index の path を付ける。
-- 全旧 fixture について、旧ベースラインと byte-for-byte で同一の DER を生成する。
+- `createInstance(schema, typeName, input)` returns
+  `{ moduleName, typeName, der }`.
+- Expose `encodeValue()` and `resolveDefinedType()` in the Core API.
+- Encode `BOOLEAN true` as `ff`, integers using minimal two's complement,
+  and lengths using definite DER.
+- Sort `SET` and `SET OF` elements lexicographically by DER bytes.
+- Omit absent defaulted fields and fields equal to their default.
+- Explicit tags wrap the inner TLV; implicit tags replace the universal tag
+  with a context-specific tag.
+- Attach Instance JSON field or array-index paths to generation errors.
+- Produce byte-for-byte identical DER for every legacy baseline fixture.
 
-### FR-09: byte と OID の helper
+### FR-09: Byte and OID Helpers
 
-- `bytesToHex()` と `hexToBytes()` を提供する。
-- 組み込み PKI OID 名と Schema Model の `oidNames` を Instance 入力から dotted-decimal OID へ解決する。
-- DER 生成用の「名前から OID」解決と、DerEditor 表示用の「OID から表示名」解決を別責務として扱う。
-- DerEditor 側の OID resolver は Viewer 表示にだけ利用し、Core の入力契約を暗黙に変更しない。
+- Provide `bytesToHex()` and `hexToBytes()`.
+- Resolve built-in PKI OID names and Schema Model `oidNames` from Instance
+  input to dotted-decimal OIDs.
+- Keep name-to-OID resolution for generation separate from OID-to-display-name
+  resolution in DerEditor.
+- Use the DerEditor OID resolver only for viewer presentation; it must not
+  change the Core input contract implicitly.
 
-### FR-10: Definition Bundle
+### FR-10: Definition Bundles
 
-Definition Bundle は次を持つ portable JSON とする。
+A Definition Bundle is portable JSON containing:
 
-- `id`、bundle format の `version`、`label`、任意の `description`
-- raw ASN.1 または解析済み Schema Model のいずれか一方
-- 1 件以上の entry
-- entry ごとの `id`、`typeName`、label/description、`sampleInput`、`defaultInput`、任意の UI Profile
+- `id`, bundle-format `version`, `label`, and optional `description`;
+- either raw ASN.1 or a parsed Schema Model;
+- at least one entry; and
+- per-entry `id`, `typeName`, label/description, `sampleInput`,
+  `defaultInput`, and an optional UI Profile.
 
-要件は次のとおり。
+Requirements:
 
-- `.definition-bundle.json` と `.bundle.json` を読み込めること。
-- JSON parse と bundle shape の診断を例外なしで取得できること。
-- entry は id を優先し、次に type name で選択できること。
-- `sampleInput` を `defaultInput` より優先すること。
-- 未知の追加 field は保持・許容し、ホスト固有 metadata を破壊しないこと。
-- active workspace を bundle として保存できること。
-- 既存 bundle から保存する場合は bundle metadata と非選択 entry を可能な範囲で維持すること。
-- 出力前に bundle shape を検証すること。
-- Instance の意味検証は選択された schema/type に対して通常の `validateInstance()` で行うこと。
+- Load `.definition-bundle.json` and `.bundle.json`.
+- Return JSON parse and bundle-shape diagnostics without throwing.
+- Select an entry by id first and type name second.
+- Prefer `sampleInput` over `defaultInput`.
+- Allow and preserve unknown fields so host metadata is not destroyed.
+- Save the active workspace as a Definition Bundle.
+- When saving from an existing bundle, preserve bundle metadata and
+  non-selected entries where possible.
+- Validate the bundle shape before download.
+- Validate selected Instance data through normal `validateInstance()`
+  processing against the selected schema and type.
 
-### FR-11: UI Profile
+### FR-11: UI Profiles
 
-- UI Profile は type ごとの optional なフォーム表示 metadata とする。
-- label、description、widget、placeholder、default input hint、hidden、collapsed、order、input mode を表現できること。
-- field path は dot path と path segment array を扱うこと。
-- array の繰り返し要素には `extensions.*.extnValue` のような `*` template を使えること。
-- exact path が template path より優先されること。
-- profile がなくても Schema Model だけから完全に利用可能なフォームを生成すること。
-- profile は診断結果や DER byte を変更しないこと。
+- A UI Profile is optional form presentation metadata for one type.
+- It can specify label, description, widget, placeholder, default input hint,
+  hidden, collapsed, order, and input mode.
+- Field paths accept dot paths and path-segment arrays.
+- Repeated array elements support templates such as
+  `extensions.*.extnValue`.
+- Exact paths take precedence over template paths.
+- A fully usable form must be generated from the Schema Model when no profile
+  exists.
+- A profile must never change diagnostics or DER bytes.
 
 ### FR-12: NamedObjects
 
-次の既存カタログと sample input を Definition Bundle として維持する。
+Preserve the following legacy catalog and sample inputs as Definition Bundles:
 
-- Person
-- TaggedPerson
-- BinaryRecord
-- DefaultRecord
-- SignedRecord
-- VersionedSerial
-- TBSCertificatePrefix
-- Certificate
-- CertificationRequest
-- CertificateList
-- AlgorithmIdentifier
-- PkiBundle
+- Person;
+- TaggedPerson;
+- BinaryRecord;
+- DefaultRecord;
+- SignedRecord;
+- VersionedSerial;
+- TBSCertificatePrefix;
+- Certificate;
+- CertificationRequest;
+- CertificateList;
+- AlgorithmIdentifier; and
+- PkiBundle.
 
-Certificate、CertificationRequest、CertificateList、PkiBundle の主 entry には既存 UI Profile 相当を付ける。子型は type selector から選択可能にし、sample があれば切り替える。
+The primary Certificate, CertificationRequest, CertificateList, and PkiBundle
+entries retain equivalent UI Profiles. Child types remain selectable and load
+sample data when available.
 
-### FR-13: PKI component definition
+### FR-13: PKI Component Definitions
 
-- 共通 PKI ASN.1 定義テキストを Core API から提供する。
-- 少なくとも AlgorithmIdentifier、Name、SubjectPublicKeyInfo、Extension、TBSCertificate、Certificate、CertificationRequest、PrivateKeyInfo、ContentInfo の既存ベースラインを維持する。
-- PkiBundle のようなデモ用 wrapper は共通ベースラインと分離する。
+- Expose common PKI ASN.1 definition text through the Core API.
+- Preserve the existing baseline for at least AlgorithmIdentifier, Name,
+  SubjectPublicKeyInfo, Extension, TBSCertificate, Certificate,
+  CertificationRequest, PrivateKeyInfo, and ContentInfo.
+- Keep demo wrappers such as PkiBundle separate from the common baseline.
 
-### FR-14: ブラウザーアプリ
+### FR-14: Browser Application
 
-ブラウザーアプリは、少なくとも次の領域を持つ。
+The browser application contains at least:
 
-- Definition
-- Instance Input
-- Diagnostics
-- Generated DER / DerEditor
-- Operation/API Log
-- About
+- Definition;
+- Instance Input;
+- Diagnostics;
+- Generated DER / DerEditor;
+- Operation/API Log; and
+- About.
 
-主操作は次のとおり。
+The primary flow is:
 
-1. file、clipboard、Definition Bundle、NamedObjects のいずれかから定義を読み込む。
-2. root type を選ぶ。
-3. Form または JSON で同一の Instance 値を編集する。
-4. Schema 診断と Instance 診断を行う。
-5. error がなければ DER を生成する。
-6. 生成 DER を埋め込み read-only DerEditor へ表示する。
-7. DerEditor の公開 Send to 機能から、同一アプリの editable な standalone view を開く。
+1. Load a definition from a file, the clipboard, a Definition Bundle, or
+   NamedObjects.
+2. Select a root type.
+3. Edit the same Instance value through Form or JSON.
+4. Run Schema and Instance diagnostics.
+5. Generate DER when no errors exist.
+6. Display generated DER in an embedded read-only DerEditor.
+7. Use DerEditor's public Send to feature to open an editable standalone view
+   in the same application.
 
-UI の追加要件は次のとおり。
+Additional UI requirements:
 
-- JSON を Form に切り替えたときに parse できない場合、JSON を失わず Form 側にエラーを表示する。
-- Form edit は canonical Instance JSON へ即時反映する。
-- primitive、named values、constructed types、CHOICE、OF、optional/default、byte mode、BIT STRING unused bits をフォーム編集できる。
-- 診断を該当 field path の近くへ表示できる。
-- type 切り替え時の sample/default 読み込みを一貫させる。
-- build、parse、validation、DerEditor load、save、失敗を log に残す。
-- file dialog の cancel をエラー扱いしない。
-- pointer と keyboard で操作できる separator を備え、狭い画面では安全に stack する。
-- pane size を保存する場合は同一オリジンの local storage に限定する。
+- If JSON cannot be parsed when switching to Form, preserve the JSON and show
+  the error in Form mode.
+- Reflect Form edits immediately in canonical Instance JSON.
+- Support form editing for primitives, named values, constructed types,
+  CHOICE, OF types, optional/defaulted fields, byte modes, and BIT STRING
+  unused bits.
+- Present diagnostics near the relevant field path.
+- Apply sample/default loading consistently when the selected type changes.
+- Log build, parse, validation, DerEditor load, save, and failure operations.
+- Do not treat file-dialog cancellation as an error.
+- Provide pointer- and keyboard-operable separators and a safe stacked layout
+  on narrow screens.
+- If pane sizes are persisted, use same-origin local storage only.
 
-### FR-15: 埋め込み App API
+### FR-15: Embeddable App API
 
-`initDerBuilder()` は selector または Element を mount target として受け付ける。
+`initDerBuilder()` accepts a selector or Element mount target.
 
-初期 option として Schema Model、Instance input、必要に応じて Definition Bundle を受け取れるようにする。返却インスタンスは少なくとも次を提供する。
+Initial options accept a Schema Model, Instance input, and, if required, a
+Definition Bundle. The returned instance provides at least:
 
-- `build(options?)`
-- `loadBundle(bundle, entryIdOrTypeName?)`
-- `loadSchema(schema)`
-- `loadInput(input)`
-- `close()`
+- `build(options?)`;
+- `loadBundle(bundle, entryIdOrTypeName?)`;
+- `loadSchema(schema)`;
+- `loadInput(input)`; and
+- `close()`.
 
-build の結果は UI 内部だけに保持せず、生成 document または構造化した失敗結果を呼び出し元が扱える API 設計にする。旧 API の `Promise<void>` をそのまま固定せず、Phase 0 で戻り値を確定する。
+The build result must not remain available only inside UI state. Host callers
+must receive a generated document or a structured failure. Phase 0 will define
+the return type rather than carrying forward the legacy `Promise<void>`
+contract without review.
 
-### FR-16: 保存と出力
+### FR-16: Save and Output
 
-- ASN.1 定義をローカルファイルへ保存できること。
-- Definition Bundle をローカル JSON ファイルへ保存できること。
-- 生成 DER は DerEditor の公開された保存機能から保存可能にすること。
-- 必要性が確認された場合は、DER Builder 側に直接の `.der` download と HEX clipboard を追加できる設計にするが、初期 parity の必須条件にはしない。
+- Save the ASN.1 definition as a local file.
+- Save a Definition Bundle as a local JSON file.
+- Make generated DER savable through DerEditor's published save behavior.
+- Keep the design open for direct `.der` download and HEX clipboard actions
+  if their need is confirmed, but do not require them for initial parity.
 
-## 7. DerEditor 取り込み要件
+## 8. DerEditor Integration Requirements
 
-### 7.1 依存境界
+### 8.1 Dependency Boundary
 
-- 初期ベースラインは `@pkistudio/dereditor` の完全固定版 `0.1.4` とする。
-- 実装開始時に `x509gadgets` の参照コミットと npm 公開状態を再確認し、変更が必要なら依存更新だけの独立 PR とする。
-- import は package export の `core`、`oid-resolver`、`viewer`、公開 icon subpath に限定する。
-- `app`、`static`、`docs`、`manuals` など内部パスを import しない。
-- `src/dereditor-adapter.ts` 以外に DerEditor API の詳細を拡散させない。型 import と公開 icon import は、ポリシーテストで明示的に許可した箇所だけ例外とする。
+- Use exactly pinned `@pkistudio/dereditor` version `0.1.4` as the initial
+  baseline.
+- At implementation time, recheck the `x509gadgets` reference and published
+  npm state. If an update is required, use a separate dependency-only pull
+  request.
+- Limit imports to package exports for `core`, `oid-resolver`, `viewer`,
+  and published icon subpaths.
+- Do not import internal paths such as `app`, `static`, `docs`, or
+  `manuals`.
+- Keep DerEditor API details in `src/dereditor-adapter.ts`. Type-only imports
+  and published icon imports are exceptions only where policy tests explicitly
+  allow them.
 
-### 7.2 adapter の責務
+### 8.2 Adapter Responsibilities
 
-adapter は少なくとも次を提供する。
+The adapter provides at least:
 
-- DER input の `parseInput(..., { format: 'der', validateRoundTrip: true })`
-- OID resolver の注入
-- read-only／editable を明示した Viewer mount
-- `loadBytes()`、`close()`、`setEditable()` の薄いラッパー
-- DER Builder と DerEditor のバージョンを独立して公開・表示するための version 取得
-- 必要な byte-to-hex/base64 helper の委譲
+- DER parsing through
+  `parseInput(..., { format: 'der', validateRoundTrip: true })`;
+- OID resolver injection;
+- explicit read-only and editable viewer mounting;
+- thin wrappers around `loadBytes()`, `close()`, and `setEditable()`;
+- version access so DER Builder and DerEditor versions are displayed
+  independently; and
+- delegated byte-to-hex/base64 helpers where needed.
 
-DerEditor DOM の class、内部 action、storage key を DER Builder の API や実装契約にしない。
+DerEditor DOM classes, internal actions, and storage keys are not DER Builder
+API or implementation contracts.
 
-### 7.3 Viewer ライフサイクル
+### 8.3 Viewer Lifecycle
 
-- 通常の DER Builder 画面では Viewer を read-only とする。
-- 生成成功時に同じ Viewer instance へ bytes を load する。
-- Viewer 内の OID 解決は package 同梱 resolver を使い、URL lookup を行わない。
-- DerEditor の公開 Send to transfer query (`subtree` または `expand`) を検出した同一ページでは Viewer を editable とする。
-- standalone 用の独自 `viewer.html`、独自 localStorage payload、独自 popup protocol は実装しない。
-- 通常タブには `pkistudio.ico`、DerEditor transfer tab には `dereditor.ico` の公開 package asset を使用する。
-- transfer 画面では不要な DER Builder shell を簡略化または非表示にし、DerEditor が転送 payload を所有できるようにする。
+- The normal DER Builder page mounts a read-only viewer.
+- A successful build loads bytes into the same viewer instance.
+- The viewer uses the packaged OID resolver and performs no URL lookup.
+- The same page detects DerEditor's public Send to transfer query
+  (`subtree` or `expand`) and makes that viewer editable.
+- Do not implement a custom `viewer.html`, local-storage payload, or popup
+  protocol.
+- Use the published `pkistudio.ico` in normal tabs and `dereditor.ico` in
+  transfer tabs.
+- Simplify or hide the DER Builder shell in transfer mode so DerEditor owns
+  the transferred payload.
 
-## 8. 非機能要件
+## 9. Non-Functional Requirements
 
-### NFR-01: セキュリティとネットワーク境界
+### NFR-01: Security and Network Boundary
 
-- production HTML に `connect-src 'none'` を含む CSP を設定する。
-- source と bundle に `fetch`、XHR、WebSocket、EventSource、sendBeacon を含めない。
-- ユーザー入力を HTML として挿入せず、表示時に escape する。
-- Definition Bundle の未知 metadata をコードとして評価しない。
-- object URL や local storage の一時データはライフサイクル終了時に解放する。
+- Set a production CSP containing `connect-src 'none'`.
+- Do not include `fetch`, XHR, WebSocket, EventSource, or sendBeacon in
+  source or production bundles.
+- Escape user input instead of inserting it as HTML.
+- Never evaluate unknown Definition Bundle metadata as code.
+- Release object URLs and temporary local-storage data at the end of their
+  lifecycle.
 
-### NFR-02: 型とブラウザー互換性
+### NFR-02: Types and Browser Compatibility
 
-- TypeScript strict、unused locals/parameters、fallthrough checks を有効にする。
-- Core API は DOM、VS Code API、Node-only runtime API に依存しない。
-- ブラウザー固有機能は `src/app.ts` 側へ閉じ込める。
-- Vite の production output は相対 base で GitHub Pages の project site から動作する。
+- Enable TypeScript strict mode, unused local/parameter checks, and fallthrough
+  checks.
+- Keep the Core API independent of the DOM, VS Code APIs, and Node-only
+  runtime APIs.
+- Contain browser-specific behavior in the application layer.
+- Use a relative Vite production base compatible with a GitHub Pages project
+  site.
 
-### NFR-03: 決定性
+### NFR-03: Determinism
 
-- 同じ Schema Model と Instance input は同じ DER byte を生成する。
-- `SET`／`SET OF` order、default omission、integer encoding をゴールデンテストで固定する。
-- Definition Bundle の再保存は意図しない metadata 消失を起こさない。
+- The same Schema Model and Instance input always produce the same DER bytes.
+- Protect SET/SET OF order, default omission, and integer encoding with golden
+  tests.
+- Definition Bundle resaves must not lose metadata unintentionally.
 
-### NFR-04: アクセシビリティと画面設計
+### NFR-04: Accessibility and Layout
 
-- menu、tab、dialog、separator、diagnostics、status/log に適切な role と accessible name を付ける。
-- keyboard だけで type 選択、Form/JSON 切り替え、build、menu、separator 操作が可能であること。
-- 390px 幅を代表値として、主要領域へ到達可能な responsive layout を維持する。
+- Give menus, tabs, dialogs, separators, diagnostics, and status/log regions
+  appropriate roles and accessible names.
+- Make type selection, Form/JSON switching, build, menus, and separator
+  resizing keyboard operable.
+- Use 390px as a representative narrow width and keep every primary area
+  reachable.
 
-### NFR-05: 配布可能性
+### NFR-05: Distributability
 
-- `npm pack --dry-run` で不要な source、fixture、秘密情報を含めない。
-- Pages artifact と公開後に取得したファイルが byte-for-byte で一致することを検証する。
-- build、test、type declaration 生成後に working tree が変更されないこと。
+- `npm pack --dry-run` must exclude unnecessary source, fixtures, and
+  secrets.
+- Compare the Pages artifact byte-for-byte with files downloaded after
+  publication.
+- Builds, tests, and declaration generation must leave the working tree clean.
 
-## 9. 初期スコープ外と既知の制限
+### NFR-06: Documentation Language
 
-旧パーサーの既知の制限を初期リリースでも明示する。
+- Every normative repository document must be in English.
+- CI or policy tests should scan Markdown documentation for known retired
+  non-English product headings and naming prefixes where a reliable check is
+  possible.
+- Documentation review is part of the completion criteria for every public
+  behavior and release change.
+- API names and examples in documentation must match the shipped package.
 
-- ASN.1 constraints
-- extension marker
-- parameterized type
-- value assignment
-- macro
-- 完全な module import
-- high-form tag number
-- 任意の ASN.1 module を処理する完全準拠コンパイラ
-- X.509、CSR、CRL の意味・暗号学的妥当性検証
-- OS trust store、ネットワーク取得、remote schema registry
-- VS Code 固有の file dialog、Webview lifecycle、host persistence
+## 10. Initial Non-Goals and Known Limits
 
-上記を黙って受理・誤符号化せず、未対応構文として明確に失敗させる。
+The initial release explicitly retains the legacy parser limits:
 
-## 10. テスト計画
+- ASN.1 constraints;
+- extension markers;
+- parameterized types;
+- value assignments;
+- macros;
+- complete module imports;
+- high-form tag numbers;
+- a general-purpose, fully conforming ASN.1 compiler;
+- semantic or cryptographic validation of X.509 certificates, CSRs, or CRLs;
+- OS trust stores, network retrieval, or remote schema registries; and
+- VS Code-specific dialogs, Webview lifecycle, or host persistence.
 
-### 10.1 Unit とゴールデンテスト
+Unsupported syntax must fail clearly rather than being accepted or encoded
+incorrectly.
 
-`x509gadgets` に合わせ、`tsx --test test/*.test.ts` と Node built-in test runner を利用する。旧 Vitest 固有 API は移行する。
+## 11. Test Plan
 
-最低限のテスト分類は次のとおり。
+### 11.1 Unit and Golden Tests
 
-- parser: module header、tag、primitive、constructed、defined type、named number、default、構文 offset
-- schema diagnostics: duplicate、unknown reference、tag range
-- instance diagnostics: path、複数 error、OID、byte、time、CHOICE
-- DER: 正負 integer、default omission、explicit/implicit/automatic tag、SET sort
-- fixtures: Person、binary、Certificate、CSR、CRL、PKI components
-- bundle/profile: parse、validation、metadata preservation、entry selection、wildcard path
-- public API: package entry と declaration contract
-- DerEditor adapter: 全生成 fixture の parse と round trip
-- policy: PkiStudio dependency、禁止 import、禁止 network、CSP、workflow
-- release: version marker と workflow contract
+Follow `x509gadgets` by using `tsx --test test/*.test.ts` with the Node
+built-in test runner. Migrate legacy Vitest-specific APIs.
 
-旧 fixture は移植前に旧ベースラインで DER byte を記録し、新実装と byte-for-byte 比較する。単に「parse できる」だけを parity 判定にしない。
+Minimum test categories:
 
-### 10.2 E2E
+- parser: module headers, tags, primitives, constructed and defined types,
+  named numbers, defaults, and syntax offsets;
+- schema diagnostics: duplicates, unknown references, and tag range;
+- instance diagnostics: paths, multiple errors, OIDs, bytes, times, and
+  CHOICE;
+- DER: positive/negative integers, default omission, explicit/implicit/
+  automatic tags, and SET sorting;
+- fixtures: Person, binary values, Certificate, CSR, CRL, and PKI components;
+- bundle/profile: parsing, validation, metadata preservation, entry selection,
+  and wildcard paths;
+- public API: package entries and declaration contracts;
+- DerEditor adapter: parse and round-trip of every generated fixture;
+- policy: PkiStudio dependencies, forbidden imports, forbidden network use,
+  CSP, workflows, and English documentation; and
+- release: version markers and workflow contracts.
 
-Playwright Chromium で少なくとも次を自動化する。
+Before migration, record DER bytes for every legacy fixture at the pinned
+baseline. Compare the new output byte-for-byte; successful parsing alone is not
+an acceptable parity test.
 
-- app 起動、About、package icon
-- NamedObject の load、type 選択、Form/JSON 同期、build
-- raw ASN.1、Schema JSON、Definition Bundle の file load
-- clipboard load
-- invalid definition、invalid bundle、invalid instance で build が block されること
-- definition と bundle の download
-- 生成 DER が embedded read-only DerEditor に表示されること
-- DerEditor Send to で editable standalone view が開くこと
-- popup block/cancel が安全に log されること
-- pane resize と keyboard resize
-- narrow viewport
-- console/page error がないこと
-- app 操作中に外部 request が 1 件もないこと
+### 11.2 E2E
 
-### 10.3 標準検証コマンド
+Automate at least the following in Playwright Chromium:
 
-実装完了後の handoff 前に次をすべて実行する。
+- app startup, About, and package icon;
+- NamedObject loading, type selection, Form/JSON synchronization, and build;
+- raw ASN.1, Schema JSON, and Definition Bundle file loading;
+- clipboard loading;
+- build blocking for invalid definitions, bundles, and instances;
+- definition and bundle download;
+- generated DER in an embedded read-only DerEditor;
+- editable standalone view through DerEditor Send to;
+- safe logging of popup blocking and cancellation;
+- pointer and keyboard pane resizing;
+- narrow viewport behavior;
+- absence of console and page errors; and
+- zero external requests during application use.
+
+### 11.3 Standard Verification Commands
+
+Run all of the following before implementation handoff:
 
 ```sh
 npm test
@@ -524,256 +667,288 @@ npm run test:e2e
 npm run pack:dry-run
 ```
 
-新しい環境では事前に `npm run test:e2e:install` を実行する。総合コマンド `npm run verify` には unit、typecheck、build、package dry-run を含め、browser verification は `npm run verify:browser` で build 後に実行する。
+Run `npm run test:e2e:install` once in a new environment. `npm run verify`
+contains unit tests, type checking, build, and package dry-run.
+`npm run verify:browser` builds before browser verification.
+
+## 12. Development Workflow
+
+### 12.1 Normal Changes
 
-## 11. 開発ワークフロー
+1. Create a purpose-specific feature branch from `main`.
+2. Identify the relevant requirement ids and fixtures first.
+3. Split pull requests by the phases below instead of mixing Core, App,
+   Viewer, and workflow work in one large change.
+4. Pass standard local verification.
+5. Open a draft pull request.
+6. Pass CI unit, typecheck, build, E2E, pack, and audit checks.
+7. Complete review, including English documentation review, and merge.
+8. Confirm the `main` Pages deployment and published-file comparison.
 
-### 11.1 通常変更
+### 12.2 CI
 
-1. `main` から目的別の feature branch を作る。
-2. 要件 ID と fixture を先に特定する。
-3. Core、App、Viewer、workflow を一つの巨大 PR に混在させず、下記 phase 単位で PR を分ける。
-4. ローカル標準検証を通す。
-5. draft PR を作成する。
-6. CI の unit、typecheck、build、E2E、pack、audit を通す。
-7. レビュー後に merge する。
-8. `main` の Pages deploy と公開内容照合を確認する。
+`.github/workflows/ci.yml` runs for pull requests and pushes to `main` in
+the same order as `x509gadgets`:
 
-### 11.2 CI
+1. `actions/checkout`;
+2. Node.js 24 setup with npm cache;
+3. `npm ci`;
+4. `npm audit --audit-level=high`;
+5. `npm test`;
+6. `npm run check`;
+7. `npm run build`;
+8. Chromium installation;
+9. `npm run test:e2e`; and
+10. `npm run pack:dry-run`.
 
-`.github/workflows/ci.yml` は pull request と `main` push で実行し、`x509gadgets` と同じ検証順序にする。
+Permissions are limited to `contents: read`. CI must not check out another
+PkiStudio repository.
 
-1. `actions/checkout`
-2. Node.js 24 setup と npm cache
-3. `npm ci`
-4. `npm audit --audit-level=high`
-5. `npm test`
-6. `npm run check`
-7. `npm run build`
-8. Chromium install
-9. `npm run test:e2e`
-10. `npm run pack:dry-run`
+### 12.3 GitHub Pages
 
-権限は `contents: read` のみにする。別の PkiStudio リポジトリを checkout しない。
+`.github/workflows/pages.yml` runs on pushes to `main` and manual dispatch.
 
-### 11.3 GitHub Pages
+- Repeat CI-equivalent validation before packaging `dist`.
+- Verify CSP and the absence of remote transport in production output.
+- Confirm that generation leaves no source changes.
+- Deploy the Pages artifact.
+- Compare every published file with a retained source artifact.
+- Use concurrency group `derbuilder-github-pages` and cancel older in-progress
+  deployments.
+- Limit permissions to `contents: read`, `pages: write`, and
+  `id-token: write`.
 
-`.github/workflows/pages.yml` は `main` push と manual dispatch で実行する。
+### 12.4 Release
 
-- CI と同等の検証を再実行してから `dist` を artifact 化する。
-- CSP と remote transport 不在を production output で検証する。
-- generated source 差分がないことを確認する。
-- Pages artifact を deploy する。
-- deploy 後、保持した source artifact と公開 URL から取得した全ファイルを比較する。
-- concurrency は `derbuilder-github-pages` とし、古い in-progress deploy を cancel する。
-- 権限は `contents: read`、`pages: write`、`id-token: write` に限定する。
+`.github/workflows/release.yml` is manual-dispatch only.
 
-### 11.4 Release
+- Require explicit `RELEASE` confirmation.
+- Accept an exact version or patch/minor/major increment.
+- Permit only `X.Y.Z` without a `v` prefix.
+- Require a successful Pages deployment for the same `main` SHA.
+- Synchronize `package.json`, the lockfile, `src/version.ts`, and README
+  using the preparation script.
+- Require version metadata to be merged through a pull request before release.
+- Create an annotated tag and a version-only GitHub Release.
 
-`.github/workflows/release.yml` は manual dispatch のみとする。
+### 12.5 npm Publication
 
-- `RELEASE` の明示 confirmation を要求する。
-- exact version または patch/minor/major increment を受け付ける。
-- `X.Y.Z`、`v` prefix なしだけを許可する。
-- release 対象の `main` commit と同じ SHA に成功した Pages deployment があることを要求する。
-- `package.json`、lockfile、`src/version.ts`、README の version を prepare script で同期する。
-- version metadata は release 実行前に PR で merge 済みであることを要求する。
-- annotated tag と version-only GitHub Release を作成する。
+`.github/workflows/npm-publish.yml` publishes only an existing stable GitHub
+Release.
 
-### 11.5 npm 公開
+- Require explicit `NPM_RELEASE` confirmation.
+- Use npm Trusted Publishing/OIDC normally.
+- Allow an environment-secret token only to bootstrap the first publication.
+- Verify Release tag, package, and lockfile version equality.
+- Reject a version that already exists on npm.
+- Repeat test, check, build, and pack from a clean checkout.
+- Verify that the registry returns the published version after
+  `npm publish --access public`.
 
-`.github/workflows/npm-publish.yml` は公開済み stable GitHub Release だけを対象とする。
+## 13. Phased Delivery Plan
 
-- `NPM_RELEASE` の明示 confirmation を要求する。
-- 通常は npm Trusted Publishing/OIDC を使う。
-- 初回だけ environment secret の一時 token bootstrap を許可する。
-- Release tag、package、lockfile の version 一致を検証する。
-- 同 version が npm に存在しないことを確認する。
-- clean checkout で test、check、build、pack を再実行する。
-- `npm publish --access public` 後、registry が対象 version を返すまで確認する。
+### Phase 0: Finalize Contracts
 
-## 12. 段階的な開発計画
+Deliverables:
 
-### Phase 0: 契約確定
+- initial English `feature-specification.md` and `api-specification.md`;
+- public API names, build return type, and diagnostic code inventory;
+- legacy fixture and expected-DER manifest; and
+- Definition Bundle and UI Profile versioning policy.
 
-成果物:
+Exit criteria:
 
-- `feature-specification.md` と `api-specification.md` の初版
-- 公開 API 名、build 戻り値、diagnostic code の一覧
-- 旧 fixture と期待 DER の manifest
-- Definition Bundle/UI Profile の versioning 方針
+- Every open item in this plan has a decision.
+- Legacy behavior is classified as retained, intentionally changed, or out of
+  scope.
+- English is documented as the repository documentation standard.
 
-完了条件:
+### Phase 1: x509gadgets-Style Foundation
 
-- この文書の未決事項に結論がある。
-- 旧挙動を「維持」「意図的変更」「対象外」に分類できている。
+Deliverables:
 
-### Phase 1: x509gadgets 型の土台
+- root configuration, package metadata, strict TypeScript, and one Vite config;
+- Node test runner, Playwright, and version script;
+- English documentation skeleton and `AGENTS.md`; and
+- empty public facades and package exports.
 
-成果物:
+Exit criteria:
 
-- root config、package metadata、strict TypeScript、単一 Vite config
-- Node test runner、Playwright、version script
-- docs の骨格と AGENTS.md
-- 空の public facade と package exports
+- The empty app passes test, check, build, E2E, and pack.
+- Generated output leaves no unintended working-tree changes.
+- All checked-in documentation is in English.
 
-完了条件:
+### Phase 2: Schema Model, Parser, and DER Core
 
-- empty app の test、check、build、E2E、pack が通る。
-- `dist` 以外に generated 差分を残さない。
+Deliverables:
 
-### Phase 2: Schema Model、parser、DER core
+- model, byte, OID, parser, DER encoder, and instance builder;
+- DER Builder public definitions for legacy core exports; and
+- PKI component baseline.
 
-成果物:
+Exit criteria:
 
-- model、bytes、OID、parser、DER encoder、instance builder
-- 旧 core export の DER Builder 名への再定義
-- PKI component baseline
+- Legacy core fixtures pass byte-for-byte parity.
+- Core source is independent of the DOM and DerEditor Viewer.
 
-完了条件:
+### Phase 3: Diagnostics
 
-- 旧 core fixture が byte-for-byte parity を満たす。
-- Core source が DOM と DerEditor Viewer に依存しない。
+Deliverables:
 
-### Phase 3: 診断
+- structured Schema and Instance diagnostics;
+- stable paths and codes; and
+- broad invalid-input tests.
 
-成果物:
+Exit criteria:
 
-- Schema、Instance の構造化診断
-- path と code の安定化
-- invalid input の網羅テスト
+- Errors block build and warnings do not.
+- Tests cover multiple errors and nested paths.
 
-完了条件:
+### Phase 4: Definition Bundles, UI Profiles, and NamedObjects
 
-- error は build を block し、warning は block しない。
-- 複数 error と nested path がテストされる。
+Deliverables:
 
-### Phase 4: Definition Bundle、UI Profile、NamedObjects
+- bundle parse, validation, and save;
+- generic form model and UI Profile application; and
+- NamedObjects catalog and production sample data.
 
-成果物:
+Exit criteria:
 
-- bundle parse/validate/save
-- generic form model と UI Profile 適用
-- NamedObjects catalog と production sample data
+- Profiles never change DER.
+- Bundle round trips preserve unknown metadata and non-selected entries.
+- Tests cover the four primary PKI profiles.
 
-完了条件:
+### Phase 5: Browser Application
 
-- profile の有無で DER が変わらない。
-- bundle round trip で未知 metadata と非選択 entry が保たれる。
-- PKI 系 4 bundle の主要 profile がテストされる。
+Deliverables:
 
-### Phase 5: ブラウザーアプリ
+- Definition, Instance, Diagnostics, Log, and About areas;
+- file, clipboard, download, Form/JSON, type selection, and build flow; and
+- responsive layout and accessible separators.
 
-成果物:
+Exit criteria:
 
-- Definition、Instance、Diagnostics、Log、About
-- file/clipboard/download、Form/JSON、type selection、build flow
-- responsive layout と accessible separator
+- Playwright replaces the legacy manual smoke checks.
+- Cancellation, invalid JSON, and empty workspace transitions are safe.
 
-完了条件:
+### Phase 6: DerEditor Integration
 
-- 旧手動 smoke check を Playwright へ置き換える。
-- cancel、invalid JSON、empty workspace を含む状態遷移が安全である。
+Deliverables:
 
-### Phase 6: DerEditor 統合
+- pinned package, adapter, local typings, and icons;
+- embedded read-only generated-DER viewer;
+- editable same-page transfer mode; and
+- complete removal of PkiStudioJS and the custom viewer page.
 
-成果物:
+Exit criteria:
 
-- pinned package、adapter、local typings、icons
-- embedded read-only generated DER viewer
-- same-page editable transfer mode
-- PkiStudioJS と独自 viewer page の完全撤去
+- DerEditor Core round-trips every fixture.
+- Save/edit is disabled in the normal viewer and enabled in the transfer
+  viewer.
+- DerEditor is the only PkiStudio package in the lockfile.
 
-完了条件:
+### Phase 7: Policy, E2E, and Pages
 
-- 全 fixture を DerEditor core が round-trip parse できる。
-- 通常 Viewer の save/edit が無効で、transfer Viewer は editable である。
-- lockfile の PkiStudio package が DerEditor だけである。
+Deliverables:
 
-### Phase 7: ポリシー、E2E、Pages
+- dependency, network, documentation-language, and workflow policy tests;
+- Playwright acceptance suite; and
+- CI and Pages workflows.
 
-成果物:
+Exit criteria:
 
-- dependency、network、workflow の policy tests
-- Playwright acceptance suite
-- CI と Pages workflow
+- No external request is made.
+- Deployed artifact verification succeeds.
+- No other repository is checked out.
+- Normative repository documentation is English.
 
-完了条件:
+### Phase 8: Publication Preparation
 
-- 外部 request がない。
-- deployed artifact verification が成功する。
-- 他リポジトリ checkout がない。
+Deliverables:
 
-### Phase 8: 公開準備
+- English README, user/API/feature/dependency/deployment/release/npm guides;
+- Release and npm-publish workflows; and
+- `0.1.0` version metadata.
 
-成果物:
+Exit criteria:
 
-- README、user/API/feature/dependency/deployment/release/npm docs
-- release と npm publish workflow
-- `0.1.0` version metadata
+- `npm pack --dry-run` contents are reviewed.
+- A Release can be created only after a successful same-SHA Pages deployment.
+- npm can be published only from a stable GitHub Release.
+- Published documentation matches implemented behavior and contains no
+  normative non-English copy.
 
-完了条件:
+## 14. Legacy-to-Target Mapping
 
-- `npm pack --dry-run` の内容をレビュー済みである。
-- Pages の同一 SHA deployment 後だけ Release を作成できる。
-- stable Release からだけ npm publish できる。
-
-## 13. 旧構成からの対応表
-
-| 旧 `asn1instancebuilder` | DER Builder での扱い |
+| Legacy `asn1instancebuilder` | DER Builder treatment |
 | --- | --- |
-| `src/core.ts`、`src/core/*` | `src/core.ts` 公開ファサード、`src/model.ts`、`src/internal/*` へ整理して移植 |
-| `src/core/pkistudio-adapter.ts` | 削除し `src/dereditor-adapter.ts` に置換 |
-| `src/app.ts`、`src/app/*` | `src/app.ts` 公開ファサードと非公開 app module に再構成 |
-| `src/viewer.ts`、`viewer.html` | 削除。同一 `index.html` の DerEditor transfer mode に置換 |
-| `src/types/pkistudiojs.d.ts` | 削除し `src/dereditor.d.ts` に置換 |
-| `src/styles/styles.css` | `src/styles.css` を公開 entry とし、必要なら非公開 style module に分割 |
-| root `fixtures/` | production NamedObjects と test fixture に分離 |
-| `vite.config.ts` + `vite.app.config.ts` | `x509gadgets` 型の単一 `vite.config.ts` に統合 |
-| Vitest | Node test runner + `tsx` に置換 |
-| 旧 CI/Pages/publish/WordPress | `x509gadgets` 型の CI/Pages/Release/npm 4 workflow に置換 |
-| Wiki 中心の仕様 | repository 内 `docs` を正本とし、Wiki は必要なら公開用 mirror とする |
-| `@pkistudio/pkistudiojs` | 完全削除。pinned `@pkistudio/dereditor` だけを採用 |
+| `src/core.ts`, `src/core/*` | Organize under the `src/core.ts` public facade, `src/model.ts`, and `src/internal/*` |
+| `src/core/pkistudio-adapter.ts` | Remove and replace with `src/dereditor-adapter.ts` |
+| `src/app.ts`, `src/app/*` | Reorganize under the `src/app.ts` public facade and private app modules |
+| `src/viewer.ts`, `viewer.html` | Remove and replace with same-`index.html` DerEditor transfer mode |
+| `src/types/pkistudiojs.d.ts` | Remove and replace with `src/dereditor.d.ts` |
+| `src/styles/styles.css` | Use `src/styles.css` as the public entry and split private style modules only if needed |
+| Root `fixtures/` | Separate production NamedObjects from test fixtures |
+| `vite.config.ts` plus `vite.app.config.ts` | Consolidate into one `x509gadgets`-style `vite.config.ts` |
+| Vitest | Replace with the Node test runner and `tsx` |
+| Legacy CI/Pages/publish/WordPress | Replace with `x509gadgets`-style CI, Pages, Release, and npm workflows |
+| Wiki-centered specifications | Make English repository `docs` normative; mirror elsewhere only if needed |
+| `@pkistudio/pkistudiojs` | Remove completely; use only pinned `@pkistudio/dereditor` |
 
-## 14. リスクと対策
+## 15. Risks and Mitigations
 
-| リスク | 対策 |
+| Risk | Mitigation |
 | --- | --- |
-| 再実装で DER byte が変わる | 旧 commit で fixture ごとの golden DER を固定し byte 比較する |
-| old UI と新 Viewer の状態管理が競合する | DerEditor adapter を単一境界にし、Viewer state と builder state を分離する |
-| DerEditor の undocumented DOM に依存する | public package export と instance method 以外を使用せず policy test で守る |
-| OID name map の向きを混同する | build input resolver と viewer display resolver を別 API・別テストにする |
-| bundle の未知 metadata を失う | parse/save round-trip fixture を用意する |
-| NamedObjects が test fixture に依存して production build が不安定になる | production sample を `src` 内に置き、test fixture は複製でなく生成結果照合に使う |
-| popup や clipboard がブラウザー設定で失敗する | 失敗を構造化 status/log にし、build 結果自体は失わない |
-| workflow の権限が広がる | job ごとに最小権限を明示し policy test で固定する |
-| 旧 package 利用者が移行できない | 初期リリース後に別途 migration guide と必要な compatibility adapter を評価する |
+| DER bytes change during reimplementation | Freeze golden DER for each fixture at the legacy commit and compare bytes |
+| Legacy UI and new Viewer state conflict | Keep a single DerEditor adapter boundary and separate viewer state from builder state |
+| Implementation depends on undocumented DerEditor DOM | Use only public package exports and instance methods, enforced by policy tests |
+| OID name-map directions are confused | Use separate APIs and tests for build-input resolution and viewer-display resolution |
+| Unknown bundle metadata is lost | Add parse/save round-trip fixtures |
+| NamedObjects depend on test fixtures in production | Keep production samples under `src`; use test fixtures for output comparison |
+| Popup or clipboard behavior is denied by the browser | Report structured status/log failures without losing the build result |
+| Workflow permissions expand | Declare minimum permissions per job and protect them with policy tests |
+| Legacy package consumers lack a migration path | Evaluate a migration guide and compatibility adapter separately after the initial release |
+| Non-English documentation is introduced later | Make English review an acceptance criterion and add reliable policy checks where practical |
 
-## 15. 実装前に確定する事項
+## 16. Decisions Required Before Implementation
 
-以下は Phase 0 で決め、仕様書へ反映する。
+Phase 0 must decide and document:
 
-1. `build()` の戻り値を `InstanceDocument` とするか、diagnostics を含む result union とするか。
-2. `DefinitionBundle` と `UiProfile` を app export に限定するか、独立 package entry を追加するか。
-3. direct `.der` download と HEX clipboard を初回リリースへ含めるか。
-4. 旧 `Asn1InstanceBuilderError` 相当を `DerBuilderError` として公開するか。
-5. root export が validation を再 export する期間と、将来の API 安定化方針。
-6. pane layout と transfer mode の最終 UI wireframe。
+1. Whether `build()` returns `InstanceDocument` or a result union containing
+   diagnostics.
+2. Whether `DefinitionBundle` and `UiProfile` remain app exports or receive
+   independent package entries.
+3. Whether direct `.der` download and HEX clipboard actions are included in
+   the initial release.
+4. Whether the legacy `Asn1InstanceBuilderError` equivalent is exposed as
+   `DerBuilderError`.
+5. How long the root export re-exports validation and what future API
+   stabilization policy applies.
+6. The final pane layout and transfer-mode wireframe.
 
-これらは DER byte parity、DerEditor 境界、ローカル完結、`x509gadgets` 型ワークフローという確定方針を変更しない範囲の設計判断である。
+These decisions do not alter the fixed principles of DER byte parity,
+DerEditor isolation, local-only processing, English repository documentation,
+and the `x509gadgets`-style workflow.
 
-## 16. 全体の完了条件
+## 17. Overall Completion Criteria
 
-DER Builder `0.1.0` は、次をすべて満たした時点で再構築完了とする。
+DER Builder `0.1.0` is complete only when all of the following are true:
 
-- 旧 `asn1instancebuilder` の対象 fixture と Core 挙動を byte-for-byte で再現する。
-- Definition Bundle、UI Profile、NamedObjects、Form/JSON、diagnostics の対象機能を備える。
-- PkiStudioJS、専用 viewer page、他 PkiStudio リポジトリとの source coupling がない。
-- 公開済みで完全固定した DerEditor package だけを package exports 経由で使用する。
-- embedded read-only Viewer と editable transfer Viewer が E2E で確認される。
-- unit、typecheck、build、E2E、pack、audit、policy tests が成功する。
-- production app が外部通信を行わず、CSP が `connect-src 'none'` を強制する。
-- GitHub Pages が検証済み `dist` と一致する。
-- Pages へ成功した同一 SHA からだけ Release を作成できる。
-- stable GitHub Release からだけ `@pkistudio/derbuilder` を npm 公開できる。
-- README と repository 内 docs が実装済み挙動と一致する。
+- It reproduces the selected legacy `asn1instancebuilder` fixtures and Core
+  behavior byte-for-byte.
+- It includes the selected Definition Bundle, UI Profile, NamedObjects,
+  Form/JSON, and diagnostics features.
+- It has no PkiStudioJS, custom viewer page, or source coupling to another
+  PkiStudio repository.
+- It uses only an exactly pinned, published DerEditor package through package
+  exports.
+- E2E verifies the embedded read-only viewer and editable transfer viewer.
+- Unit, typecheck, build, E2E, pack, audit, and policy tests pass.
+- The production app makes no external connections and its CSP enforces
+  `connect-src 'none'`.
+- GitHub Pages content matches the validated `dist`.
+- A Release can be created only from the same SHA successfully deployed to
+  Pages.
+- `@pkistudio/derbuilder` can be published only from a stable GitHub Release.
+- README and repository documentation match shipped behavior.
+- Every normative repository document is written in English.
